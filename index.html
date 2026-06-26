@@ -654,9 +654,13 @@
         <button class="btn-sm" onclick="exportExcel()">📊 Xuất Excel</button>
         <p class="settings-note">Xuất toàn bộ booking ra file .csv để import vào Google Sheets.</p>
       </div>
-      <div class="settings-row">
-        <div class="settings-label">Phiên bản</div>
-        <div style="font-size:13px;color:var(--text2)">Noi Bai Car v2.2</div>
+      <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div class="settings-label">Phiên bản ứng dụng</div>
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <div style="font-size:14px;font-weight:600;color:var(--gd)">Nội Bài Car v<span id="app-version-display"></span></div>
+          <div id="update-status" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <button class="btn-sm" style="font-size:12px" onclick="checkForUpdate()">🔄 Kiểm tra cập nhật</button>
       </div>
     </div>
       </div>
@@ -684,6 +688,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
+const APP_VERSION = '2.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -831,6 +836,12 @@ function initApp() {
   renderBookings();
   renderUserSettings();
   switchTab(firstTab);
+
+  // Hiển thị version
+  const verEl = document.getElementById('app-version-display');
+  if (verEl) verEl.textContent = APP_VERSION;
+  const statusEl = document.getElementById('update-status');
+  if (statusEl) statusEl.textContent = '✅ Đang dùng bản mới nhất';
 
   // Auto-pull khi mở app
   setTimeout(function() { syncPull(true); fetchApiKeyFromSheet(); }, 1500);
@@ -2436,17 +2447,52 @@ function showUpdateBanner() {
   banner.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1A5C38;color:white;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap';
   banner.innerHTML = '🆕 Có phiên bản mới <button onclick="doUpdate()" style="background:white;color:#1A5C38;border:none;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">Cập nhật</button>';
   document.body.appendChild(banner);
+  // Cập nhật status trong settings
+  const statusEl = document.getElementById('update-status');
+  if (statusEl) statusEl.textContent = '🟡 Có bản mới!';
 }
 
 function doUpdate() {
-  navigator.serviceWorker.getRegistration().then(function(reg) {
-    if (reg && reg.waiting) {
-      reg.waiting.postMessage('skipWaiting');
-    } else {
-      location.reload(true);
-    }
+  // Auto-push dữ liệu trước khi update
+  syncPush(true).finally(function() {
+    navigator.serviceWorker.getRegistration().then(function(reg) {
+      if (reg && reg.waiting) {
+        reg.waiting.postMessage('skipWaiting');
+      } else {
+        location.reload(true);
+      }
+    });
   });
 }
+
+function checkForUpdate() {
+  const statusEl = document.getElementById('update-status');
+  if (statusEl) statusEl.textContent = '⏳ Đang kiểm tra...';
+  navigator.serviceWorker.getRegistration().then(function(reg) {
+    if (!reg) { if (statusEl) statusEl.textContent = '❌ Không có SW'; return; }
+    reg.update().then(function() {
+      if (reg.waiting) {
+        showUpdateBanner();
+      } else {
+        if (statusEl) statusEl.textContent = '✅ Đang dùng bản mới nhất';
+        setTimeout(function(){ if (statusEl) statusEl.textContent = ''; }, 3000);
+      }
+    });
+  });
+}
+
+// Auto-push dữ liệu khi đóng/reload trang
+window.addEventListener('beforeunload', function() {
+  if (typeof sheetUrl !== 'undefined' && sheetUrl) {
+    const payload = JSON.stringify({
+      bookings: typeof bookings !== 'undefined' ? bookings : [],
+      rooms: typeof rooms !== 'undefined' ? rooms : [],
+      partners: typeof partners !== 'undefined' ? partners : [],
+      customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}')
+    });
+    navigator.sendBeacon(sheetUrl, payload);
+  }
+});
 </script>
 </body>
 </html>

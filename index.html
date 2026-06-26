@@ -655,7 +655,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '3.4';
+const APP_VERSION = '3.2';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1442,67 +1442,127 @@ function renderResults(list, isTK, isCK, bienTen) {
     const id = 'res-' + idx;
     const label = list.length > 1 ? ' (Khách ' + (idx+1) + ')' : '';
 
+    // Tin điều xe card
     const driverCard = document.createElement('div');
     driverCard.className = 'out-card';
-    driverCard.innerHTML =
-      '<div class="out-head">' +
-        '<span class="out-label">🚘 Tin điều xe' + label + '</span>' +
-        '<button class="btn-copy" id="copy-driver-'+id+'" onclick="copyEl('o-driver-'+id+'','copy-driver-'+id+'')">📋 Copy</button>' +
-      '</div>' +
-      '<div class="out-body" id="o-driver-'+id+'"></div>';
+    const driverHead = document.createElement('div');
+    driverHead.className = 'out-head';
+    const driverLabel = document.createElement('span');
+    driverLabel.className = 'out-label';
+    driverLabel.textContent = '🚘 Tin điều xe' + label;
+    const driverCopyBtn = document.createElement('button');
+    driverCopyBtn.className = 'btn-copy';
+    driverCopyBtn.id = 'copy-driver-' + id;
+    driverCopyBtn.textContent = '📋 Copy';
+    driverCopyBtn.onclick = (function(i){ return function(){ copyEl('o-driver-'+i,'copy-driver-'+i); }; })(id);
+    driverHead.appendChild(driverLabel);
+    driverHead.appendChild(driverCopyBtn);
+    const driverBody = document.createElement('div');
+    driverBody.className = 'out-body';
+    driverBody.id = 'o-driver-' + id;
+    driverBody.textContent = obj.driver || '';
+    driverCard.appendChild(driverHead);
+    driverCard.appendChild(driverBody);
     container.appendChild(driverCard);
-    document.getElementById('o-driver-'+id).textContent = obj.driver || '';
 
+    // Tin xác nhận card
     const confirmCard = document.createElement('div');
     confirmCard.className = 'out-card';
-    confirmCard.innerHTML =
-      '<div class="out-head">' +
-        '<span class="out-label">✅ Tin xác nhận' + label + '</span>' +
-        '<div class="out-head-right">' +
-          '<div class="lang-tabs">' +
-            '<button class="lang-tab active" id="tab-confirm-vi-'+id+'" onclick="switchLangDyn(''+id+'','vi')">VI</button>' +
-            '<button class="lang-tab" id="tab-confirm-en-'+id+'" onclick="switchLangDyn(''+id+'','en')">EN</button>' +
-          '</div>' +
-          '<button class="btn-copy" id="copy-confirm-'+id+'" onclick="copyEl('o-confirm-vi-'+id+'','copy-confirm-'+id+'')">📋 Copy</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="out-body" id="o-confirm-vi-'+id+'"></div>' +
-      '<div class="out-body" id="o-confirm-en-'+id+'" style="display:none"></div>';
+    const confirmHead = document.createElement('div');
+    confirmHead.className = 'out-head';
+    const confirmLabel = document.createElement('span');
+    confirmLabel.className = 'out-label';
+    confirmLabel.textContent = '✅ Tin xác nhận' + label;
+    const confirmRight = document.createElement('div');
+    confirmRight.className = 'out-head-right';
+    const langTabs = document.createElement('div');
+    langTabs.className = 'lang-tabs';
+    const tabVI = document.createElement('button');
+    tabVI.className = 'lang-tab active';
+    tabVI.id = 'tab-confirm-vi-' + id;
+    tabVI.textContent = 'VI';
+    tabVI.onclick = (function(i){ return function(){ switchLangDyn(i,'vi'); }; })(id);
+    const tabEN = document.createElement('button');
+    tabEN.className = 'lang-tab';
+    tabEN.id = 'tab-confirm-en-' + id;
+    tabEN.textContent = 'EN';
+    tabEN.onclick = (function(i){ return function(){ switchLangDyn(i,'en'); }; })(id);
+    langTabs.appendChild(tabVI);
+    langTabs.appendChild(tabEN);
+    const confirmCopyBtn = document.createElement('button');
+    confirmCopyBtn.className = 'btn-copy';
+    confirmCopyBtn.id = 'copy-confirm-' + id;
+    confirmCopyBtn.textContent = '📋 Copy';
+    confirmCopyBtn.onclick = (function(i){ return function(){ copyEl('o-confirm-vi-'+i,'copy-confirm-'+i); }; })(id);
+    confirmRight.appendChild(langTabs);
+    confirmRight.appendChild(confirmCopyBtn);
+    confirmHead.appendChild(confirmLabel);
+    confirmHead.appendChild(confirmRight);
+    const confirmVI = document.createElement('div');
+    confirmVI.className = 'out-body';
+    confirmVI.id = 'o-confirm-vi-' + id;
+    confirmVI.textContent = obj.confirm_vi || '';
+    const confirmEN = document.createElement('div');
+    confirmEN.className = 'out-body';
+    confirmEN.id = 'o-confirm-en-' + id;
+    confirmEN.style.display = 'none';
+    confirmEN.textContent = obj.confirm_en || '';
+    confirmCard.appendChild(confirmHead);
+    confirmCard.appendChild(confirmVI);
+    confirmCard.appendChild(confirmEN);
     container.appendChild(confirmCard);
-    document.getElementById('o-confirm-vi-'+id).textContent = obj.confirm_vi || '';
-    document.getElementById('o-confirm-en-'+id).textContent = obj.confirm_en || '';
 
+    // Loại khách card
     const bookingCard = document.createElement('div');
     bookingCard.className = 'card';
-    bookingCard.innerHTML =
-      '<div class="card-body">' +
-        '<div class="check-row">' +
-          '<label class="check-item" onclick="handleCheckKhachLeDyn(''+id+'')">' +
-            '<input type="checkbox" id="cb-khach-le-'+id+'" checked>' +
-            '<span class="check-box"></span><span class="check-label">👤 Khách lẻ</span>' +
-          '</label>' +
-          '<label class="check-item" onclick="handleCheckDoiTacDyn(''+id+'')">' +
-            '<input type="checkbox" id="cb-doi-tac-'+id+'">' +
-            '<span class="check-box"></span><span class="check-label">🤝 Đối tác</span>' +
-          '</label>' +
-        '</div>' +
-        '<div class="field" id="partner-select-wrap-'+id+'" style="display:none">' +
-          '<label>Chọn đối tác</label>' +
-          '<select id="partner-select-'+id+'"></select>' +
-        '</div>' +
-      '</div>';
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    const checkRow = document.createElement('div');
+    checkRow.className = 'check-row';
+
+    const lbKhachLe = document.createElement('label');
+    lbKhachLe.className = 'check-item';
+    const cbKhachLe = document.createElement('input');
+    cbKhachLe.type = 'checkbox';
+    cbKhachLe.id = 'cb-khach-le-' + id;
+    cbKhachLe.checked = true;
+    cbKhachLe.onchange = (function(i){ return function(){ handleCheckKhachLeDyn(i); }; })(id);
+    lbKhachLe.appendChild(cbKhachLe);
+    lbKhachLe.innerHTML += '<span class="check-box"></span><span class="check-label">👤 Khách lẻ</span>';
+
+    const lbDoiTac = document.createElement('label');
+    lbDoiTac.className = 'check-item';
+    const cbDoiTac = document.createElement('input');
+    cbDoiTac.type = 'checkbox';
+    cbDoiTac.id = 'cb-doi-tac-' + id;
+    cbDoiTac.onchange = (function(i){ return function(){ handleCheckDoiTacDyn(i); }; })(id);
+    lbDoiTac.appendChild(cbDoiTac);
+    lbDoiTac.innerHTML += '<span class="check-box"></span><span class="check-label">🤝 Đối tác</span>';
+
+    checkRow.appendChild(lbKhachLe);
+    checkRow.appendChild(lbDoiTac);
+
+    const partnerWrap = document.createElement('div');
+    partnerWrap.className = 'field';
+    partnerWrap.id = 'partner-select-wrap-' + id;
+    partnerWrap.style.display = 'none';
+    partnerWrap.innerHTML = '<label>Chọn đối tác</label><select id="partner-select-' + id + '"></select>';
+
+    cardBody.appendChild(checkRow);
+    cardBody.appendChild(partnerWrap);
+    bookingCard.appendChild(cardBody);
     container.appendChild(bookingCard);
 
+    // Nút lưu
     const saveBtn = document.createElement('button');
     saveBtn.className = 'btn-main';
     saveBtn.style.background = 'var(--blue)';
     saveBtn.textContent = '📁 Thêm vào Booking' + label;
-    const capturedObj = obj;
-    const capturedId = id;
-    saveBtn.onclick = function() { saveToBookingDyn(capturedObj, capturedId, isTK, isCK, bienTen); };
+    saveBtn.onclick = (function(o, i){ return function(){ saveToBookingDyn(o, i, isTK, isCK, bienTen); }; })(obj, id);
     container.appendChild(saveBtn);
   });
 }
+
 
 function switchLangDyn(id, lang) {
   document.getElementById('o-confirm-vi-'+id).style.display = lang==='vi' ? 'block' : 'none';

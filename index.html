@@ -545,7 +545,7 @@
     <span class="settings-title">Cài đặt</span>
   </div>
   <div class="settings-body">
-    <div class="settings-group">
+    <div class="settings-group" id="settings-api-group">
       <button class="acc-head" onclick="toggleAcc('api')"><span class="acc-icon">🔑</span><span class="acc-title">API</span><span class="acc-arrow">▶</span></button>
       <div class="acc-body" id="acc-api">
     <div class="settings-card">
@@ -565,7 +565,7 @@
       </div>
     </div>
 
-    <div class="settings-group">
+    <div class="settings-group" id="settings-room-group">
       <button class="acc-head" onclick="toggleAcc('room')"><span class="acc-icon">🏆</span><span class="acc-title">Quản lý Room</span><span class="acc-arrow">▶</span></button>
       <div class="acc-body" id="acc-room">
     <div class="settings-card" id="room-list-settings"></div>
@@ -590,7 +590,7 @@
       </div>
     </div>
 
-    <div class="settings-group">
+    <div class="settings-group" id="settings-sync-group">
       <button class="acc-head" onclick="toggleAcc('sync')"><span class="acc-icon">🔄</span><span class="acc-title">Đồng bộ Google Sheets</span><span class="acc-arrow">▶</span></button>
       <div class="acc-body" id="acc-sync">
     <div class="settings-card">
@@ -644,7 +644,7 @@
       </div>
     </div>
 
-    <div class="settings-group">
+    <div class="settings-group" id="settings-data-group">
       <button class="acc-head" onclick="toggleAcc('data')"><span class="acc-icon">💾</span><span class="acc-title">Dữ liệu</span><span class="acc-arrow">▶</span></button>
       <div class="acc-body" id="acc-data">
     <div class="settings-card">
@@ -686,6 +686,7 @@ const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzyMnKRjbsbApwoEnMDdm
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
+const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-data'];
 
 function getUsers() {
   return JSON.parse(localStorage.getItem('nbc_users') || '[]');
@@ -761,6 +762,23 @@ function initApp() {
   document.getElementById('settings-users-group').style.display = isAdmin ? '' : 'none';
   document.getElementById('settings-changepass-group').style.display = isAdmin ? '' : 'none';
 
+  // Show/hide settings feature groups based on permissions
+  const settingsFeatureMap = {
+    'settings-rooms': 'settings-room-group',
+    'settings-sync': 'settings-sync-group',
+    'settings-data': 'settings-data-group'
+  };
+  SETTINGS_FEATURES.forEach(function(sf) {
+    const groupEl = document.getElementById(settingsFeatureMap[sf]);
+    if (groupEl) {
+      const show = isAdmin || (user.features || []).includes(sf);
+      groupEl.style.display = show ? '' : 'none';
+    }
+  });
+  // Hide API group for non-admin too (admin-only)
+  const apiGroupEl = document.getElementById('settings-api-group');
+  if (apiGroupEl) apiGroupEl.style.display = isAdmin ? '' : 'none';
+
   // Load initial tab - first allowed feature
   const firstTab = user.role === 'admin' ? 'dieu-xe' : (features[0] || 'dieu-xe');
 
@@ -787,7 +805,7 @@ function renderUserSettings() {
     el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Chưa có người dùng nào</div>';
     return;
   }
-  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo'};
+  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-data':'Dữ liệu / Xuất Excel'};
   el.innerHTML = users.map(function(u,i){
     const fLabels = (u.features||[]).map(function(f){ return featureLabels[f]||f; }).join(', ') || 'Không có quyền';
     return '<div class="room-item">'+
@@ -813,8 +831,9 @@ function showEditUserForm(idx) {
 function showUserForm(idx) {
   const users = getUsers();
   const u = idx !== null ? users[idx] : null;
-  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo'};
-  const checkboxes = ALL_FEATURES.map(function(f){
+  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-data':'💾 Dữ liệu / Xuất Excel'};
+  const allFeaturesToShow = ALL_FEATURES.concat(SETTINGS_FEATURES);
+  const checkboxes = allFeaturesToShow.map(function(f){
     const checked = u && (u.features||[]).includes(f) ? 'checked' : '';
     return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);padding:4px 0;cursor:pointer">'+
       '<input type="checkbox" id="uf-'+f+'" '+checked+' style="width:16px;height:16px;accent-color:var(--gd)">'+
@@ -841,7 +860,7 @@ function showUserForm(idx) {
 function saveUserForm(idx) {
   const uname = (document.getElementById('uf-username')||{}).value||'';
   const pass = (document.getElementById('uf-password')||{}).value||'';
-  const features = ALL_FEATURES.filter(function(f){ return document.getElementById('uf-'+f) && document.getElementById('uf-'+f).checked; });
+  const features = ALL_FEATURES.concat(SETTINGS_FEATURES).filter(function(f){ return document.getElementById('uf-'+f) && document.getElementById('uf-'+f).checked; });
   if (!uname.trim()) { showToast('⚠️ Vui lòng nhập tên đăng nhập'); return; }
   if (uname === ADMIN_USERNAME) { showToast('⚠️ Tên đăng nhập đã được sử dụng'); return; }
   const users = getUsers();

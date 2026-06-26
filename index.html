@@ -654,15 +654,23 @@
         <button class="btn-sm" onclick="exportExcel()">📊 Xuất Excel</button>
         <p class="settings-note">Xuất toàn bộ booking ra file .csv để import vào Google Sheets.</p>
       </div>
-      <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <div class="settings-label">Phiên bản ứng dụng</div>
-        <div style="display:flex;align-items:center;gap:10px;width:100%">
-          <div style="font-size:14px;font-weight:600;color:var(--gd)">Nội Bài Car v<span id="app-version-display"></span></div>
-          <div id="update-status" style="font-size:11px;color:var(--text3)"></div>
-        </div>
-        <button class="btn-sm" style="font-size:12px" onclick="checkForUpdate()">🔄 Kiểm tra cập nhật</button>
+
+    </div>
       </div>
     </div>
+    <div class="settings-group" id="settings-version-group">
+      <button class="acc-head" onclick="toggleAcc('version')"><span class="acc-icon">📱</span><span class="acc-title">Phiên bản</span><span class="acc-arrow">▶</span></button>
+      <div class="acc-body" id="acc-version">
+        <div class="settings-card">
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:15px;font-weight:700;color:var(--gd)">🚗 Nội Bài Car</div>
+              <div style="font-size:13px;background:var(--gl);color:var(--gd);padding:2px 10px;border-radius:12px;font-weight:600;border:1px solid var(--gb)">v<span id="app-version-display"></span></div>
+            </div>
+            <div id="update-status" style="font-size:12px;color:var(--text3)"></div>
+            <button class="btn-sm" style="font-size:12px;width:100%;justify-content:center" onclick="checkForUpdate()">🔄 Kiểm tra cập nhật</button>
+          </div>
+        </div>
       </div>
     </div>
     <button class="btn-save" style="background:var(--red)" onclick="doLogout()">🚪 Đăng xuất</button>
@@ -688,7 +696,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '3.2';
+const APP_VERSION = '3.3';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -819,6 +827,9 @@ function initApp() {
   // Hide API group for non-admin too (admin-only)
   const apiGroupEl = document.getElementById('settings-api-group');
   if (apiGroupEl) apiGroupEl.style.display = isAdmin ? '' : 'none';
+  // Tab Phiên bản hiện cho tất cả user
+  const versionGroupEl = document.getElementById('settings-version-group');
+  if (versionGroupEl) versionGroupEl.style.display = '';
 
   // Load initial tab - first allowed feature
   const firstTab = user.role === 'admin' ? 'dieu-xe' : (features[0] || 'dieu-xe');

@@ -314,48 +314,7 @@
         <div>Nhập tin nháp và nhấn Xử lý</div>
       </div>
       <div id="results" style="display:none;flex-direction:column;gap:10px">
-        <div class="out-card">
-          <div class="out-head">
-            <span class="out-label">🚘 Tin điều xe</span>
-            <button class="btn-copy" id="copy-driver" onclick="copyEl('o-driver','copy-driver')">📋 Copy</button>
-          </div>
-          <div class="out-body" id="o-driver"></div>
-        </div>
-        <div class="out-card">
-          <div class="out-head">
-            <span class="out-label">✅ Tin xác nhận</span>
-            <div class="out-head-right">
-              <div class="lang-tabs">
-                <button class="lang-tab active" id="tab-confirm-vi" onclick="switchLang('confirm','vi')">VI</button>
-                <button class="lang-tab" id="tab-confirm-en" onclick="switchLang('confirm','en')">EN</button>
-              </div>
-              <button class="btn-copy" id="copy-confirm" onclick="copyEl('o-confirm-vi','copy-confirm')">📋 Copy</button>
-            </div>
-          </div>
-          <div class="out-body" id="o-confirm-vi"></div>
-          <div class="out-body" id="o-confirm-en" style="display:none"></div>
-        </div>
-        <div class="card">
-          <div class="card-body">
-            <div class="check-row">
-              <label class="check-item" onclick="handleCheckKhachLe()">
-                <input type="checkbox" id="cb-khach-le" checked>
-                <span class="check-box"></span>
-                <span class="check-label">👤 Khách lẻ</span>
-              </label>
-              <label class="check-item" onclick="handleCheckDoiTac()">
-                <input type="checkbox" id="cb-doi-tac">
-                <span class="check-box"></span>
-                <span class="check-label">🤝 Đối tác</span>
-              </label>
-            </div>
-            <div class="field" id="partner-select-wrap" style="display:none">
-              <label>Chọn đối tác</label>
-              <select id="partner-select"></select>
-            </div>
-          </div>
-        </div>
-        <button class="btn-main" style="background:var(--blue)" onclick="saveToBooking()">📁 Thêm vào Booking</button>
+        <div id="results-dynamic"></div>
         <div class="pb"></div>
       </div>
     </div>
@@ -696,7 +655,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '3.3';
+const APP_VERSION = '3.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1406,8 +1365,8 @@ TIỀN TỐ GIÁ: "${giaPrefix}"
 HIỂN THỊ GIÁ VP CHO KHÁCH: ${showGiaVP?'có':'không'}
 NGÀY HÔM NAY: ${today}
 
-=== QUY TẮC ===
-SĐT: Mọi SĐT trong tin nháp = SĐT khách, LUÔN đưa vào "Số điện thoại"/"Phone number".
+=== QUY TẮC CHUNG ===
+SĐT: Mọi SĐT trong tin nháp = SĐT khách, LUÔN đưa vào trường "Số điện thoại"/"Phone number".
 
 LOẠI XE:
 - Không có loại xe → bỏ trống, KHÔNG tự thêm
@@ -1419,6 +1378,7 @@ LOẠI XE:
 GIỜ: Tin điều xe: HH:MM (24h). Tin xác nhận VI: thêm buổi (sáng/trưa/chiều/tối). EN: AM/PM.
 
 GIÁ: Tin điều xe: ngắn gọn (200k,5tr) + tiền tố "${giaPrefix}". Tin xác nhận VI: 300.000 VND. EN: 300,000 VND. Giá dịch vụ CHỈ hiển thị khi HIỂN THỊ GIÁ VP=có, dùng GIÁ VP.
+GHÉP CHIỀU: Nếu 2 tin nháp cùng khách (cùng tên VÀ SĐT), gộp thành 1 booking. Giá dịch vụ = tổng 2 chiều (ví dụ 1.000.000 VND, không ghi dấu +). Điền đủ Điểm đón, Điểm trả, Giờ đón, Mã chuyến bay cho CẢ 2 chiều.
 
 MŨI TÊN: ➜. KÝ HIỆU: "thu hộ vp","TK","CK"=nội bộ. "Your amount"=giá nội bộ. "hạ T1/T2"=hạ cánh Terminal.
 
@@ -1428,6 +1388,23 @@ MŨI TÊN: ➜. KÝ HIỆU: "thu hộ vp","TK","CK"=nội bộ. "Your amount"=gi
 
 "quay đầu/quay về": tin điều xe thêm (~HH:MM quay đầu) cuối dòng lộ trình. Tin xác nhận: điểm trả cuối "(~HH:MM quay về điểm đón)" + điền Ngày giờ về.
 
+GIỚI TÍNH: Từ tên khách nhận diện Anh (nam) hoặc Chị (nữ). Không rõ → "Anh/Chị". EN: Mr./Ms.
+
+=== FORMAT TIN XÁC NHẬN ===
+Lời chào VI (bắt buộc có):
+Em chào [Anh/Chị] [tên] ạ,
+Em là Đồng - điều phối viên tại Nội Bài Car, sẽ hỗ trợ [Anh/Chị] trong chuyến đi sắp tới.
+Em xin phép liên hệ để xác nhận lại thông tin đặt xe của [Anh/Chị] như sau:
+
+Lời chào EN (bắt buộc có):
+Dear [Mr./Ms.] [tên],
+My name is Dong - coordinator at Noi Bai Car. I will assist you with your upcoming trip.
+Please allow me to confirm your booking details as follows:
+
+Thứ tự các trường sau lời chào (chỉ dòng có dữ liệu):
+VI: Ngày đón → Giờ đón (HH:MM buổi) → Giờ dự hạ → Họ tên khách → Số điện thoại → Số khách/Hành lý → Hãng bay → Mã chuyến bay → Điểm đón → Điểm đón 2 → Điểm trả → Điểm trả 2 → Ngày giờ về → Loại xe → Giá dịch vụ
+EN: Cùng thứ tự, tiếng Anh, AM/PM, format 300,000 VND
+
 === ĐẦU RA ===
 1. "driver": 3 dòng cách nhau \\n\\n:
 DÒNG 1: CHỈ ngày+loại xe. Hôm nay+có xe=[loại xe]. Hôm nay+không xe=bỏ dòng1. Ngày khác+có xe=[DD/MM loại xe]. Ngày khác+không xe=[DD/MM].
@@ -1435,39 +1412,19 @@ DÒNG 2: Có bay=[mã bay HH:MM hạ TX ➜ điểm đến bỏ số nhà (+~HH:
 DÒNG 3: [${giaPrefix}giá ngắn]
 TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
-2. "confirm_vi": Chỉ dòng có dữ liệu:
-Dạ em xin xác nhận chuyến của anh/chị như sau:
+2. "confirm_vi": theo format trên, bắt đầu bằng lời chào VI.
+3. "confirm_en": theo format trên, bắt đầu bằng lời chào EN.
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"giá gốc","priceVP":"${priceVP}"}
 
-H   tên khách: [nếu có]
-Số điện thoại: [LUÔN điền nếu có]
-Số khách / Hành lý: [nếu có]
-Ngày đón: [nếu có]
-Giờ đón: [HH:MM buổi]
-Giờ dự hạ: [nếu có]
-H ng bay: [nếu có]
-Mã chuyến bay: [nếu có]
-Điểm đón: [đầy đủ số nhà+dấu TV]
-Điểm đón 2: [nếu có]
-Điểm trả: [đầy đủ. Quay đầu: "tên (~HH:MM quay về điểm đón)"]
-Điểm trả 2: [nếu có]
-Ngày giờ về: [nếu có]
-Loại xe: [tên đầy đủ]
-Giá dịch vụ: [CHỈ nếu HIỂN THỊ GIÁ VP=có: GIÁ VP format 300.000 VND]
-
-3. "confirm_en": Cùng logic, tiếng Anh.
-
-4. "meta": JSON object thông tin để lưu booking:
-{"name":"tên khách hoặc rỗng","phone":"SĐT hoặc rỗng","date":"DD/MM/YYYY hoặc rỗng","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"loại xe hoặc rỗng","priceDriver":"giá điều xe gốc","priceVP":"${priceVP}"}
-
-Trả về JSON thuần không markdown: {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
+Trả về JSON array thuần không markdown:
+[{"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}]
+Nếu 2 tin cùng khách → mảng 1 phần tử (đã gộp). 2 khách khác nhau → mảng 2 phần tử.`;
 
   try {
-    const obj = JSON.parse(await callAPI(prompt));
-    document.getElementById('o-driver').textContent = obj.driver||'';
-    document.getElementById('o-confirm-vi').textContent = obj.confirm_vi||'';
-    document.getElementById('o-confirm-en').textContent = obj.confirm_en||'';
-    switchLang('confirm','vi');
-    lastProcessed = { ...obj.meta, driverMsg: obj.driver, confirmVI: obj.confirm_vi, confirmEN: obj.confirm_en, isTK, isCK, bienTen };
+    const raw = await callAPI(prompt);
+    const arr = JSON.parse(raw);
+    const list = Array.isArray(arr) ? arr : [arr];
+    renderResults(list, isTK, isCK, bienTen);
     const r = document.getElementById('results');
     r.style.display='flex'; r.style.flexDirection='column'; r.style.gap='10px';
   } catch(e){
@@ -1476,6 +1433,148 @@ Trả về JSON thuần không markdown: {"driver":"...","confirm_vi":"...","con
   }
   btn.disabled=false; btn.innerHTML='✨ Xử lý';
 }
+
+// ===== RENDER RESULTS (multi-booking support) =====
+function renderResults(list, isTK, isCK, bienTen) {
+  const container = document.getElementById('results-dynamic');
+  container.innerHTML = '';
+  list.forEach(function(obj, idx) {
+    const id = 'res-' + idx;
+    const label = list.length > 1 ? ' (Khách ' + (idx+1) + ')' : '';
+
+    const driverCard = document.createElement('div');
+    driverCard.className = 'out-card';
+    driverCard.innerHTML =
+      '<div class="out-head">' +
+        '<span class="out-label">🚘 Tin điều xe' + label + '</span>' +
+        '<button class="btn-copy" id="copy-driver-'+id+'" onclick="copyEl('o-driver-'+id+'','copy-driver-'+id+'')">📋 Copy</button>' +
+      '</div>' +
+      '<div class="out-body" id="o-driver-'+id+'"></div>';
+    container.appendChild(driverCard);
+    document.getElementById('o-driver-'+id).textContent = obj.driver || '';
+
+    const confirmCard = document.createElement('div');
+    confirmCard.className = 'out-card';
+    confirmCard.innerHTML =
+      '<div class="out-head">' +
+        '<span class="out-label">✅ Tin xác nhận' + label + '</span>' +
+        '<div class="out-head-right">' +
+          '<div class="lang-tabs">' +
+            '<button class="lang-tab active" id="tab-confirm-vi-'+id+'" onclick="switchLangDyn(''+id+'','vi')">VI</button>' +
+            '<button class="lang-tab" id="tab-confirm-en-'+id+'" onclick="switchLangDyn(''+id+'','en')">EN</button>' +
+          '</div>' +
+          '<button class="btn-copy" id="copy-confirm-'+id+'" onclick="copyEl('o-confirm-vi-'+id+'','copy-confirm-'+id+'')">📋 Copy</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="out-body" id="o-confirm-vi-'+id+'"></div>' +
+      '<div class="out-body" id="o-confirm-en-'+id+'" style="display:none"></div>';
+    container.appendChild(confirmCard);
+    document.getElementById('o-confirm-vi-'+id).textContent = obj.confirm_vi || '';
+    document.getElementById('o-confirm-en-'+id).textContent = obj.confirm_en || '';
+
+    const bookingCard = document.createElement('div');
+    bookingCard.className = 'card';
+    bookingCard.innerHTML =
+      '<div class="card-body">' +
+        '<div class="check-row">' +
+          '<label class="check-item" onclick="handleCheckKhachLeDyn(''+id+'')">' +
+            '<input type="checkbox" id="cb-khach-le-'+id+'" checked>' +
+            '<span class="check-box"></span><span class="check-label">👤 Khách lẻ</span>' +
+          '</label>' +
+          '<label class="check-item" onclick="handleCheckDoiTacDyn(''+id+'')">' +
+            '<input type="checkbox" id="cb-doi-tac-'+id+'">' +
+            '<span class="check-box"></span><span class="check-label">🤝 Đối tác</span>' +
+          '</label>' +
+        '</div>' +
+        '<div class="field" id="partner-select-wrap-'+id+'" style="display:none">' +
+          '<label>Chọn đối tác</label>' +
+          '<select id="partner-select-'+id+'"></select>' +
+        '</div>' +
+      '</div>';
+    container.appendChild(bookingCard);
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn-main';
+    saveBtn.style.background = 'var(--blue)';
+    saveBtn.textContent = '📁 Thêm vào Booking' + label;
+    const capturedObj = obj;
+    const capturedId = id;
+    saveBtn.onclick = function() { saveToBookingDyn(capturedObj, capturedId, isTK, isCK, bienTen); };
+    container.appendChild(saveBtn);
+  });
+}
+
+function switchLangDyn(id, lang) {
+  document.getElementById('o-confirm-vi-'+id).style.display = lang==='vi' ? 'block' : 'none';
+  document.getElementById('o-confirm-en-'+id).style.display = lang==='en' ? 'block' : 'none';
+  document.getElementById('tab-confirm-vi-'+id).className = 'lang-tab' + (lang==='vi' ? ' active' : '');
+  document.getElementById('tab-confirm-en-'+id).className = 'lang-tab' + (lang==='en' ? ' active' : '');
+  document.getElementById('copy-confirm-'+id).onclick = function() { copyEl('o-confirm-'+lang+'-'+id, 'copy-confirm-'+id); };
+}
+
+function handleCheckKhachLeDyn(id) {
+  setTimeout(function() {
+    if (document.getElementById('cb-khach-le-'+id).checked) {
+      document.getElementById('cb-doi-tac-'+id).checked = false;
+      document.getElementById('partner-select-wrap-'+id).style.display = 'none';
+    }
+  }, 0);
+}
+
+function handleCheckDoiTacDyn(id) {
+  setTimeout(function() {
+    const dt = document.getElementById('cb-doi-tac-'+id);
+    if (dt.checked) {
+      document.getElementById('cb-khach-le-'+id).checked = false;
+      const sel = document.getElementById('partner-select-'+id);
+      sel.innerHTML = !partners.length ? '<option value="">— Chưa có đối tác —</option>' :
+        '<option value="">— Chọn đối tác —</option>' +
+        partners.map(function(p){ return '<option value="'+p.id+'">'+p.name+(p.phone?' • '+p.phone:'')+'</option>'; }).join('');
+      document.getElementById('partner-select-wrap-'+id).style.display = 'flex';
+    } else {
+      document.getElementById('partner-select-wrap-'+id).style.display = 'none';
+    }
+  }, 0);
+}
+
+function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
+  const meta = obj.meta || {};
+  const booking = {
+    id: generateBookingId(),
+    createdAt: new Date().toISOString(),
+    name: meta.name || 'Khách',
+    phone: meta.phone || '',
+    date: meta.date || '',
+    route: meta.route || '',
+    vehicle: meta.vehicle || '',
+    priceDriver: meta.priceDriver || '',
+    priceVP: meta.priceVP || '',
+    driverMsg: obj.driver || '',
+    confirmVI: obj.confirm_vi || '',
+    confirmEN: obj.confirm_en || '',
+    isTK: isTK, isCK: isCK,
+    statusDrive: 'processing', statusPay: 'unpaid', statusPoints: 'unpending',
+    room: '', points: '', pointsAmount: 0,
+    custType: 'le', partnerId: '', partnerName: '', note: ''
+  };
+  const isDoiTac = document.getElementById('cb-doi-tac-'+id) && document.getElementById('cb-doi-tac-'+id).checked;
+  if (isDoiTac) {
+    const pid = (document.getElementById('partner-select-'+id) || {}).value || '';
+    const p = partners.find(function(x){ return x.id === pid; });
+    if (!pid || !p) { showToast('⚠️ Vui lòng chọn đối tác'); return; }
+    booking.custType = 'doitac';
+    booking.partnerId = p.id;
+    booking.partnerName = p.name;
+    if (!p.bookingIds) p.bookingIds = [];
+    p.bookingIds.push(booking.id);
+    localStorage.setItem('nbc_partners', JSON.stringify(partners));
+  }
+  bookings.unshift(booking);
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  showToast('✓ Đã thêm vào Booking: ' + booking.id);
+}
+
 
 // ===== SAVE TO BOOKING =====
 function generateBookingId() {

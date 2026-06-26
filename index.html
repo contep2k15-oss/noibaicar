@@ -655,7 +655,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '3.5';
+const APP_VERSION = '3.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1366,59 +1366,114 @@ HIỂN THỊ GIÁ VP CHO KHÁCH: ${showGiaVP?'có':'không'}
 NGÀY HÔM NAY: ${today}
 
 === QUY TẮC CHUNG ===
-SĐT: Mọi SĐT trong tin nháp = SĐT khách, LUÔN đưa vào trường "Số điện thoại"/"Phone number".
+SĐT: Mọi SĐT trong tin nháp = SĐT khách, LUÔN đưa vào trường số điện thoại.
 
 LOẠI XE:
 - Không có loại xe → bỏ trống, KHÔNG tự thêm
 - X4C/x4c→X4C, X7C/x7c→X7C, X16C→X16C, X29C→X29C (viết hoa)
 - Carnival, Limousine, Custin, VF9, Innova, Fortuner, Sedan, SUV... giữ nguyên
-- Tin xác nhận: X4C→"Sedan", X7C→"Xe 7 chỗ", X16C→"Xe 16 chỗ", X29C→"Xe 29 chỗ"
+- Tin xác nhận: X4C→"Sedan", X7C→"7-seater"/"Xe 7 chỗ", X16C→"16-seater"/"Xe 16 chỗ", X29C→"29-seater"/"Xe 29 chỗ"
 - Nếu BIỂN TÊN=có → thêm ", biển tên" sau loại xe trong tin điều xe
 
-GIỜ: Tin điều xe: HH:MM (24h). Tin xác nhận VI: thêm buổi (sáng/trưa/chiều/tối). EN: AM/PM.
+GIỜ: Tin điều xe: HH:MM (24h). Tin xác nhận VI: thêm buổi (sáng/trưa/chiều/tối). EN: AM/PM 12h.
 
-GIÁ: Tin điều xe: ngắn gọn (200k,5tr) + tiền tố "${giaPrefix}". Tin xác nhận VI: 300.000 VND. EN: 300,000 VND. Giá dịch vụ CHỈ hiển thị khi HIỂN THỊ GIÁ VP=có, dùng GIÁ VP.
-GHÉP CHIỀU: Nếu 2 tin nháp cùng khách (cùng tên VÀ SĐT), gộp thành 1 booking. Giá dịch vụ = tổng 2 chiều (ví dụ 1.000.000 VND, không ghi dấu +). Điền đủ Điểm đón, Điểm trả, Giờ đón, Mã chuyến bay cho CẢ 2 chiều.
+GIÁ: Tin điều xe: ngắn gọn (200k,5tr) + tiền tố "${giaPrefix}". VI: 300.000 VND. EN: 300,000 VND.
+Giá dịch vụ CHỈ hiển thị trong tin xác nhận khi HIỂN THỊ GIÁ VP=có, dùng GIÁ VP đã nhập.
 
-MŨI TÊN: ➜. KÝ HIỆU: "thu hộ vp","TK","CK"=nội bộ. "Your amount"=giá nội bộ. "hạ T1/T2"=hạ cánh Terminal.
+GHÉP CHIỀU: Nếu 2 tin nháp cùng khách (cùng tên VÀ SĐT):
+- Gộp thành 1 booking duy nhất
+- Giá VP (nếu hiển thị) = tổng 2 chiều, chỉ ghi 1 lần (ví dụ: 1.000.000 VND)
+- Họ tên, SĐT, loại xe (nếu giống nhau) chỉ ghi 1 lần ngay sau lời chào
+- Điền đầy đủ thông tin CHO CẢ 2 CHIỀU dưới dạng section CHIỀU ĐI / CHIỀU VỀ (VI) hoặc OUTBOUND / RETURN (EN)
 
-ĐỊA DANH tin xác nhận: Nội Bài/HAN/T1/T2→Sân bay Nội Bài, TSN/SGN→Sân bay Tân Sơn Nhất, DAD→Sân bay Đà Nẵng, HPH→Sân bay Cát Bi Hải Phòng. Tin điều xe: tên ngắn.
+MŨI TÊN điều xe: ➜. KÝ HIỆU nội bộ: "thu hộ vp","TK","CK","Your amount" → KHÔNG đưa vào tin xác nhận.
+
+ĐỊA DANH tin xác nhận: Nội Bài/HAN/T1/T2→"Hanoi Airport (HAN)"/"Sân bay Nội Bài", TSN/SGN→"Tan Son Nhat Airport"/"Sân bay Tân Sơn Nhất", DAD→"Da Nang Airport"/"Sân bay Đà Nẵng", HPH→"Cat Bi Airport Hai Phong"/"Sân bay Cát Bi Hải Phòng". Tin điều xe: tên ngắn.
 
 ĐỊA CHỈ: Thêm dấu tiếng Việt cho đường/phường/quận (không cho tên người). Tin điều xe: bỏ số nhà. Tin xác nhận: giữ số nhà đầy đủ.
 
-"quay đầu/quay về": tin điều xe thêm (~HH:MM quay đầu) cuối dòng lộ trình. Tin xác nhận: điểm trả cuối "(~HH:MM quay về điểm đón)" + điền Ngày giờ về.
+LOẠI CHUYẾN — tự nhận diện:
+- ĐÓN sân bay: khách đến từ sân bay về điểm khác. Thêm "• Giờ dự hạ" (VI) / "• Estimated landing time" (EN).
+- TIỄN sân bay: khách từ điểm khác ra sân bay. Nếu chưa biết terminal → thêm câu hỏi terminal cuối tin.
+- Không sân bay: không thêm câu kết đặc biệt.
 
-GIỚI TÍNH: Từ tên khách nhận diện Anh (nam) hoặc Chị (nữ). Không rõ → "Anh/Chị". EN: Mr./Ms.
+"quay đầu/quay về": tin điều xe thêm (~HH:MM quay đầu) cuối dòng lộ trình. Tin xác nhận: điểm trả "(~HH:MM quay về điểm đón)".
 
-=== FORMAT TIN XÁC NHẬN ===
-Lời chào VI (bắt buộc có):
-Em chào [Anh/Chị] [tên] ạ,
-Em là Đồng - điều phối viên tại Nội Bài Car, sẽ hỗ trợ [Anh/Chị] trong chuyến đi sắp tới.
+GIỚI TÍNH: Từ tên khách nhận diện nam→"Anh"/"Mr.", nữ→"Chị"/"Ms.", không rõ→"Anh/Chị"/"Sir/Madam".
+
+=== FORMAT TIN XÁC NHẬN VI ===
+Lời chào (bắt buộc):
+Dạ em chào [Anh/Chị] [tên],
+Em tên là Đồng, phụ trách điều phối chuyến đi cho [Anh/Chị].
 Em xin phép liên hệ để xác nhận lại thông tin đặt xe của [Anh/Chị] như sau:
 
-Lời chào EN (bắt buộc có):
-Dear [Mr./Ms.] [tên],
-My name is Dong - coordinator at Noi Bai Car. I will assist you with your upcoming trip.
-Please allow me to confirm your booking details as follows:
+Thứ tự sau lời chào (bullet •, chỉ dòng có dữ liệu):
+1. Thông tin khách (ngay sau lời chào):
+• Họ tên khách (nếu có)
+• Số điện thoại (nếu có)
+• Số khách / Hành lý (nếu có)
+• Loại xe
 
-Thứ tự các trường sau lời chào (chỉ dòng có dữ liệu):
-VI: Ngày đón → Giờ đón (HH:MM buổi) → Giờ dự hạ → Họ tên khách → Số điện thoại → Số khách/Hành lý → Hãng bay → Mã chuyến bay → Điểm đón → Điểm đón 2 → Điểm trả → Điểm trả 2 → Ngày giờ về → Loại xe → Giá dịch vụ
-EN: Cùng thứ tự, tiếng Anh, AM/PM, format 300,000 VND
+2. Thông tin chuyến (nếu 1 chiều: không cần section title; nếu 2 chiều: dùng "CHIỀU ĐI:" và "CHIỀU VỀ:"):
+• Ngày đón
+• Giờ đón (HH:MM buổi)
+• Giờ dự hạ (chỉ khi ĐÓN sân bay)
+• Điểm đón (đầy đủ số nhà + dấu TV)
+• Điểm đón 2 (nếu có)
+• Điểm trả (đầy đủ)
+• Điểm trả 2 (nếu có)
+• Mã chuyến bay (nếu có)
+• Giá dịch vụ (CHỈ khi HIỂN THỊ GIÁ VP=có, format 300.000 VND)
+
+Kết thúc:
+- ĐÓN sân bay: "Khi máy bay hạ cánh, [Anh/Chị] vui lòng nhắn tin cho em để em tiện theo dõi ạ.\nNếu [Anh/Chị] không có wifi hoặc internet, [Anh/Chị] ra ngoài cột số 11 và gọi điện cho em nhé.\nEm rất vui được hỗ trợ [Anh/Chị] trong chuyến đi này. Chúc [Anh/Chị] có một chuyến đi thật vui vẻ và thuận lợi ạ."
+- TIỄN (chưa rõ terminal): "[Anh/Chị] vui lòng xác nhận cho em chuyến bay xuất phát từ cửa quốc tế hay nội địa ạ?\nEm cảm ơn [Anh/Chị] và rất vui được hỗ trợ [Anh/Chị] trong chuyến đi này ạ."
+- TIỄN (đã rõ terminal): "Em rất vui được hỗ trợ [Anh/Chị] trong chuyến đi này. Chúc [Anh/Chị] có một chuyến đi thật vui vẻ và thuận lợi ạ."
+- Không sân bay: "Em rất vui được hỗ trợ [Anh/Chị] trong chuyến đi này. Chúc [Anh/Chị] có một chuyến đi thật vui vẻ và thuận lợi ạ."
+
+=== FORMAT TIN XÁC NHẬN EN ===
+Lời chào (bắt buộc):
+Dear [Mr./Ms. Tên / Sir/Madam],
+My name is Dong, and I am in charge of coordinating your transportation for the upcoming trip.
+I am contacting you to kindly confirm your booking details as follows:
+
+Thứ tự sau lời chào (bullet •, chỉ dòng có dữ liệu):
+1. Thông tin khách:
+• Passenger name (nếu có)
+• Phone number (nếu có)
+• Number of passengers / Luggage (nếu có)
+• Vehicle
+
+2. Thông tin chuyến (nếu 2 chiều dùng "OUTBOUND:" và "RETURN:"):
+• Date
+• Pickup time (AM/PM)
+• Estimated landing time (chỉ khi ĐÓN sân bay)
+• Pickup location (đầy đủ, tiếng Anh)
+• Pickup location 2 (nếu có)
+• Destination (đầy đủ)
+• Destination 2 (nếu có)
+• Flight number (nếu có)
+• Amount (CHỈ khi HIỂN THỊ GIÁ VP=có, format 300,000 VND)
+
+Kết thúc:
+- ĐÓN: "Upon arrival, please send me a message.\nIf you do not have Wi-Fi or internet access, please proceed outside to Pillar No. 11 and call me.\nThank you very much."
+- TIỄN (chưa rõ terminal): "Could you please confirm whether your flight is from the international terminal or the domestic terminal? Thank you.\nThank you very much."
+- TIỄN (đã rõ terminal) hoặc không sân bay: "Thank you very much."
 
 === ĐẦU RA ===
-1. "driver": 3 dòng cách nhau \\n\\n:
-DÒNG 1: CHỈ ngày+loại xe. Hôm nay+có xe=[loại xe]. Hôm nay+không xe=bỏ dòng1. Ngày khác+có xe=[DD/MM loại xe]. Ngày khác+không xe=[DD/MM].
-DÒNG 2: Có bay=[mã bay HH:MM hạ TX ➜ điểm đến bỏ số nhà (+~HH:MM quay đầu nếu có)]. Không bay=[HH:MM điểm đón bỏ số nhà ➜ điểm đến bỏ số nhà]. Nhiều điểm đón dùng +.
+1. "driver": 3 dòng cách nhau \n\n:
+DÒNG 1: ngày+loại xe (nếu hôm nay không có xe thì bỏ dòng 1). Ngày khác: DD/MM [loại xe nếu có].
+DÒNG 2: Có bay=[mã bay HH:MM hạ TX ➜ điểm đến bỏ số nhà]. Không bay=[HH:MM điểm đón bỏ số nhà ➜ điểm đến]. Nhiều điểm đón dùng +.
 DÒNG 3: [${giaPrefix}giá ngắn]
 TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
-2. "confirm_vi": theo format trên, bắt đầu bằng lời chào VI.
-3. "confirm_en": theo format trên, bắt đầu bằng lời chào EN.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"giá gốc","priceVP":"${priceVP}"}
+2. "confirm_vi": theo format VI trên.
+3. "confirm_en": theo format EN trên.
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
 
 Trả về JSON array thuần không markdown:
 [{"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}]
-Nếu 2 tin cùng khách → mảng 1 phần tử (đã gộp). 2 khách khác nhau → mảng 2 phần tử.`;
+Nếu 2 tin cùng khách → mảng 1 phần tử (gộp). 2 khách khác nhau → mảng 2 phần tử.`;
 
   try {
     const raw = await callAPI(prompt);

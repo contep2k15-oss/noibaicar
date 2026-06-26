@@ -833,7 +833,7 @@ function initApp() {
   switchTab(firstTab);
 
   // Auto-pull khi mở app
-  setTimeout(function() { syncPull(true); }, 1500);
+  setTimeout(function() { syncPull(true); fetchApiKeyFromSheet(); }, 1500);
 
   // Auto-pull khi user quay lại tab/app
   document.addEventListener('visibilitychange', function() {
@@ -1002,7 +1002,33 @@ function saveSettings() {
   updateApiStatus(true);
   document.getElementById('banner-nokey').style.display = 'none';
   showToast('✓ Đã lưu API key');
+  pushApiKeyToSheet(key).catch(function(){});
   setTimeout(hideSettings, 800);
+}
+
+async function pushApiKeyToSheet(key) {
+  if (!SHEET_URL) return;
+  try {
+    const encoded = encodeURIComponent(key);
+    const url = SHEET_URL + (SHEET_URL.indexOf('?')>=0?'&':'?') + 'action=saveApiKey&apikey=' + encoded;
+    await fetch(url, { method:'GET', redirect:'follow' });
+  } catch(e) {}
+}
+
+async function fetchApiKeyFromSheet() {
+  if (!SHEET_URL) return;
+  try {
+    const url = SHEET_URL + (SHEET_URL.indexOf('?')>=0?'&':'?') + 'action=getApiKey';
+    const res = await fetch(url, { method:'GET', redirect:'follow' });
+    const data = await res.json();
+    if (data.ok && data.apikey) {
+      apiKey = data.apikey;
+      localStorage.setItem('nbc_apikey', data.apikey);
+      updateApiStatus(true);
+      const banner = document.getElementById('banner-nokey');
+      if (banner) banner.style.display = 'none';
+    }
+  } catch(e) {}
 }
 function updateApiStatus(ok) {
   document.getElementById('dot').className = 'status-dot '+(ok?'on':'off');
@@ -1138,10 +1164,19 @@ function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var params = e && e.parameter ? e.parameter : {};
-    // Trả về danh sách users
     if (params.action === 'getUsers') {
-      var users = loadUsers(ss);
-      return jsonOut({ ok: true, users: users });
+      return jsonOut({ ok: true, users: loadUsers(ss) });
+    }
+    if (params.action === 'saveUsers' && params.users) {
+      saveUsers(ss, JSON.parse(params.users));
+      return jsonOut({ ok: true });
+    }
+    if (params.action === 'saveApiKey' && params.apikey) {
+      saveApiKey(ss, params.apikey);
+      return jsonOut({ ok: true });
+    }
+    if (params.action === 'getApiKey') {
+      return jsonOut({ ok: true, apikey: loadApiKey(ss) });
     }
     var parsed = loadData(ss) || { bookings: [], rooms: [], partners: [], customers: {} };
     parsed.ok = true;
@@ -1149,6 +1184,17 @@ function doGet(e) {
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
   }
+}
+
+function saveApiKey(ss, key) {
+  var sh = ss.getSheetByName('NBC_CONFIG') || ss.insertSheet('NBC_CONFIG');
+  sh.getRange(1,1).setValue(key);
+}
+
+function loadApiKey(ss) {
+  var sh = ss.getSheetByName('NBC_CONFIG');
+  if (!sh || sh.getLastRow() < 1) return '';
+  return sh.getRange(1,1).getValue() || '';
 }
 
 function saveUsers(ss, users) {

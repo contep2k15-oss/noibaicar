@@ -58,6 +58,8 @@
   .scroll-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   .input-zone{flex-shrink:0;padding:12px 14px;background:var(--bg);border-bottom:0.5px solid var(--gb);display:flex;flex-direction:column;gap:10px}
   .results-zone{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  /* BOOKING SCROLL */
+  #booking-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 
   /* CARDS */
   .card{background:var(--white);border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -554,14 +556,9 @@
         </div>
       </div>
       <div class="settings-row">
-        <div class="settings-label">API Key (ShopAIKey)</div>
+        <div class="settings-label">API Key</div>
         <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off">
-        <p class="settings-note">Lấy key tại shopaikey.com. Key lưu trên máy bạn.</p>
-      </div>
-      <div class="settings-row">
-        <div class="settings-label">Model</div>
-        <div class="key-badge">gemini-3.1-flash-lite</div>
-        <p class="settings-note">Endpoint: https://api.shopaikey.com/v1</p>
+        <p class="settings-note">Key được lưu trên máy của bạn.</p>
       </div>
     </div>
     <button class="btn-save" onclick="saveSettings()">💾 Lưu API key</button>
@@ -603,18 +600,47 @@
           <span class="status-dot off" id="sheet-dot"></span><span id="sheet-status-text">Chưa kết nối</span>
         </div>
       </div>
-      <div class="settings-row">
+      <div class="settings-row" style="display:none">
         <div class="settings-label">Link ứng dụng web (Apps Script)</div>
         <input type="text" id="sheet-url-input" placeholder="Dán link .../exec vào đây" autocomplete="off" style="width:100%;border:1.5px solid var(--gm);border-radius:8px;padding:11px;font-size:13px;background:#F2FAF5;color:var(--text)">
         <p class="settings-note">Dán URL kết thúc bằng /exec rồi bấm "Lưu link". Dữ liệu lưu trên Google Sheets của bạn.</p>
       </div>
     </div>
-    <button class="btn-save" onclick="saveSheetUrl()">💾 Lưu link</button>
+    <button class="btn-save" onclick="saveSheetUrl()" style="display:none">💾 Lưu link</button>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn-save" onclick="syncPush()">⬆️ Đẩy lên</button>
       <button class="btn-save" style="background:var(--blue)" onclick="syncPull()">⬇️ Tải về</button>
     </div>
-    <button class="btn-sm" style="margin-top:8px;width:100%;padding:9px" onclick="showAppsScriptHelp()">📜 Xem mã & hướng dẫn cài đặt</button>
+    <button class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã & hướng dẫn cài đặt</button>
+      </div>
+    </div>
+
+    <div class="settings-group" id="settings-users-group">
+      <button class="acc-head" onclick="toggleAcc('users')"><span class="acc-icon">👥</span><span class="acc-title">Quản lý người dùng</span><span class="acc-arrow">▶</span></button>
+      <div class="acc-body" id="acc-users">
+        <div class="settings-card" id="user-list-settings"></div>
+        <button class="btn-save" style="background:var(--blue)" onclick="showAddUserForm()">+ Thêm người dùng</button>
+      </div>
+    </div>
+
+    <div class="settings-group" id="settings-changepass-group">
+      <button class="acc-head" onclick="toggleAcc('changepass')"><span class="acc-icon">🔐</span><span class="acc-title">Đổi mật khẩu</span><span class="acc-arrow">▶</span></button>
+      <div class="acc-body" id="acc-changepass">
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-label">Mật khẩu hiện tại</div>
+            <input type="password" id="cp-old" placeholder="Nhập mật khẩu hiện tại" autocomplete="off">
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Mật khẩu mới</div>
+            <input type="password" id="cp-new" placeholder="Nhập mật khẩu mới" autocomplete="off">
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Xác nhận mật khẩu mới</div>
+            <input type="password" id="cp-confirm" placeholder="Nhập lại mật khẩu mới" autocomplete="off">
+          </div>
+        </div>
+        <button class="btn-save" onclick="doChangePassword()">💾 Đổi mật khẩu</button>
       </div>
     </div>
 
@@ -634,13 +660,229 @@
     </div>
       </div>
     </div>
+    <button class="btn-save" style="background:var(--red)" onclick="doLogout()">🚪 Đăng xuất</button>
     <div class="pb"></div>
+  </div>
+</div>
+
+<!-- ===== LOGIN OVERLAY ===== -->
+<div id="login-overlay" style="display:flex;position:fixed;inset:0;z-index:500;background:var(--gd);flex-direction:column;align-items:center;justify-content:center;max-width:430px;margin:0 auto;padding:24px">
+  <div style="font-size:32px;margin-bottom:8px">🚗</div>
+  <div style="font-size:18px;font-weight:700;color:white;margin-bottom:4px">Nội Bài Car</div>
+  <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:32px">Vui lòng đăng nhập để tiếp tục</div>
+  <div style="background:white;border-radius:16px;padding:20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px">
+    <div class="field"><label>Tên đăng nhập</label><input type="text" id="login-username" placeholder="Nhập tên đăng nhập" autocomplete="off"></div>
+    <div class="field"><label>Mật khẩu</label><input type="password" id="login-password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div id="login-error" style="display:none;color:var(--red);font-size:12px;text-align:center">Tên đăng nhập hoặc mật khẩu không đúng</div>
+    <button class="btn-main" onclick="doLogin()">Đăng nhập</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ===== AUTH & USER MANAGEMENT =====
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzyMnKRjbsbApwoEnMDdmmPkEE4XxOaHywny5qPCywj4bb2NZD4jPEYX6VwHQsEP67C/exec';
+const ADMIN_USERNAME = 'admin';
+const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
+const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
+
+function getUsers() {
+  return JSON.parse(localStorage.getItem('nbc_users') || '[]');
+}
+function saveUsers(users) {
+  localStorage.setItem('nbc_users', JSON.stringify(users));
+}
+function getAdminPass() {
+  return localStorage.getItem('nbc_admin_pass') || DEFAULT_ADMIN_PASS;
+}
+function saveAdminPass(p) {
+  localStorage.setItem('nbc_admin_pass', p);
+}
+function getCurrentUser() {
+  const s = sessionStorage.getItem('nbc_session');
+  return s ? JSON.parse(s) : null;
+}
+function setCurrentUser(u) {
+  sessionStorage.setItem('nbc_session', JSON.stringify(u));
+}
+
+function doLogin() {
+  const uname = document.getElementById('login-username').value.trim();
+  const pass = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  // Admin login
+  if (uname === ADMIN_USERNAME && pass === getAdminPass()) {
+    setCurrentUser({ username: ADMIN_USERNAME, role: 'admin', features: ALL_FEATURES });
+    document.getElementById('login-overlay').style.display = 'none';
+    initApp();
+    return;
+  }
+  // User login
+  const users = getUsers();
+  const u = users.find(function(x){ return x.username === uname && x.password === pass; });
+  if (u) {
+    setCurrentUser({ username: u.username, role: 'user', features: u.features || [] });
+    document.getElementById('login-overlay').style.display = 'none';
+    initApp();
+    return;
+  }
+  errEl.style.display = 'block';
+}
+
+function doLogout() {
+  if (!confirm('Bạn có chắc muốn đăng xuất không?')) return;
+  sessionStorage.removeItem('nbc_session');
+  location.reload();
+}
+
+function initApp() {
+  const user = getCurrentUser();
+  if (!user) { document.getElementById('login-overlay').style.display = 'flex'; return; }
+
+  // Setup Google Sheets URL silently
+  sheetUrl = SHEET_URL;
+  localStorage.setItem('nbc_sheet_url', sheetUrl);
+
+  // Show/hide nav items based on features
+  const features = user.features || [];
+  ALL_FEATURES.forEach(function(f) {
+    const navBtn = document.getElementById('nav-'+f);
+    const menuBtn = document.getElementById('menu-'+f);
+    const show = user.role === 'admin' || features.includes(f);
+    if (navBtn) navBtn.style.display = show ? '' : 'none';
+    if (menuBtn) menuBtn.style.display = show ? '' : 'none';
+  });
+
+  // Show/hide admin-only settings sections
+  const isAdmin = user.role === 'admin';
+  document.getElementById('settings-users-group').style.display = isAdmin ? '' : 'none';
+  document.getElementById('settings-changepass-group').style.display = isAdmin ? '' : 'none';
+
+  // Load initial tab - first allowed feature
+  const firstTab = user.role === 'admin' ? 'dieu-xe' : (features[0] || 'dieu-xe');
+
+  // Init app data
+  if (apiKey) {
+    document.getElementById('api-key-input').value = apiKey;
+    updateApiStatus(true);
+    document.getElementById('banner-nokey').style.display = 'none';
+  } else {
+    document.getElementById('banner-nokey').style.display = 'flex';
+  }
+  updateSheetStatus(true);
+  renderRoomSettings();
+  renderBookings();
+  renderUserSettings();
+  switchTab(firstTab);
+}
+
+function renderUserSettings() {
+  const el = document.getElementById('user-list-settings');
+  if (!el) return;
+  const users = getUsers();
+  if (!users.length) {
+    el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Chưa có người dùng nào</div>';
+    return;
+  }
+  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo'};
+  el.innerHTML = users.map(function(u,i){
+    const fLabels = (u.features||[]).map(function(f){ return featureLabels[f]||f; }).join(', ') || 'Không có quyền';
+    return '<div class="room-item">'+
+      '<div class="room-info">'+
+        '<div class="room-name">👤 '+u.username+'</div>'+
+        '<div class="room-rate" style="font-size:11px">'+fLabels+'</div>'+
+      '</div>'+
+      '<div class="room-actions">'+
+        '<button class="btn-sm" onclick="showEditUserForm('+i+')">Sửa</button>'+
+        '<button class="btn-sm danger" onclick="deleteUser('+i+')">Xoá</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function showAddUserForm() {
+  showUserForm(null);
+}
+function showEditUserForm(idx) {
+  showUserForm(idx);
+}
+
+function showUserForm(idx) {
+  const users = getUsers();
+  const u = idx !== null ? users[idx] : null;
+  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo'};
+  const checkboxes = ALL_FEATURES.map(function(f){
+    const checked = u && (u.features||[]).includes(f) ? 'checked' : '';
+    return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);padding:4px 0;cursor:pointer">'+
+      '<input type="checkbox" id="uf-'+f+'" '+checked+' style="width:16px;height:16px;accent-color:var(--gd)">'+
+      featureLabels[f]+'</label>';
+  }).join('');
+
+  const popup = document.createElement('div');
+  popup.id = 'user-form-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto">'+
+    '<div style="font-size:14px;font-weight:600;color:var(--gt)">'+(u?'✏️ Sửa người dùng':'➕ Thêm người dùng')+'</div>'+
+    '<div class="field"><label>Tên đăng nhập</label><input type="text" id="uf-username" value="'+(u?u.username:'')+'" placeholder="vd: nhanvien1" '+(u?'readonly':'')+' style="'+(u?'background:var(--gl)':'')+'"</div>'+
+    '<div class="field"><label>'+(u?'Mật khẩu mới (để trống = giữ nguyên)':'Mật khẩu')+'</label><input type="password" id="uf-password" placeholder="Nhập mật khẩu" autocomplete="new-password"></div>'+
+    '<div class="field"><label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.03em">Phân quyền tính năng</label>'+
+    '<div style="display:flex;flex-direction:column;gap:2px;padding:8px 0">'+checkboxes+'</div></div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<button class="btn-save" onclick="saveUserForm('+(idx!==null?idx:'null')+')">💾 Lưu</button>'+
+    '<button class="btn-save" style="background:var(--text3)" onclick="document.getElementById(\'user-form-popup\').remove()">Huỷ</button>'+
+    '</div></div>';
+  document.body.appendChild(popup);
+  popup.addEventListener('click', function(e){ if(e.target===popup) popup.remove(); });
+}
+
+function saveUserForm(idx) {
+  const uname = (document.getElementById('uf-username')||{}).value||'';
+  const pass = (document.getElementById('uf-password')||{}).value||'';
+  const features = ALL_FEATURES.filter(function(f){ return document.getElementById('uf-'+f) && document.getElementById('uf-'+f).checked; });
+  if (!uname.trim()) { showToast('⚠️ Vui lòng nhập tên đăng nhập'); return; }
+  if (uname === ADMIN_USERNAME) { showToast('⚠️ Tên đăng nhập đã được sử dụng'); return; }
+  const users = getUsers();
+  if (idx === null || idx === 'null') {
+    if (!pass) { showToast('⚠️ Vui lòng nhập mật khẩu'); return; }
+    if (users.find(function(u){ return u.username===uname; })) { showToast('⚠️ Tên đăng nhập đã tồn tại'); return; }
+    users.push({ username: uname.trim(), password: pass, features: features });
+  } else {
+    if (!users[idx]) return;
+    if (pass) users[idx].password = pass;
+    users[idx].features = features;
+  }
+  saveUsers(users);
+  document.getElementById('user-form-popup').remove();
+  renderUserSettings();
+  showToast('✓ Đã lưu người dùng');
+}
+
+function deleteUser(idx) {
+  if (!confirm('Xoá người dùng này?')) return;
+  const users = getUsers();
+  users.splice(idx, 1);
+  saveUsers(users);
+  renderUserSettings();
+  showToast('✓ Đã xoá người dùng');
+}
+
+function doChangePassword() {
+  const oldPass = document.getElementById('cp-old').value;
+  const newPass = document.getElementById('cp-new').value;
+  const confirmPass = document.getElementById('cp-confirm').value;
+  if (oldPass !== getAdminPass()) { showToast('⚠️ Mật khẩu hiện tại không đúng'); return; }
+  if (!newPass) { showToast('⚠️ Vui lòng nhập mật khẩu mới'); return; }
+  if (newPass !== confirmPass) { showToast('⚠️ Mật khẩu xác nhận không khớp'); return; }
+  saveAdminPass(newPass);
+  document.getElementById('cp-old').value = '';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-confirm').value = '';
+  showToast('✓ Đã đổi mật khẩu thành công');
+}
+
 // ===== STATE =====
 let apiKey = localStorage.getItem('nbc_apikey') || '';
 let bookings = JSON.parse(localStorage.getItem('nbc_bookings') || '[]');
@@ -653,16 +895,13 @@ let sheetUrl = localStorage.getItem('nbc_sheet_url') || '';
 
 // ===== INIT =====
 window.onload = function() {
-  if (apiKey) {
-    document.getElementById('api-key-input').value = apiKey;
-    updateApiStatus(true);
-    document.getElementById('banner-nokey').style.display = 'none';
-  } else {
-    document.getElementById('banner-nokey').style.display = 'flex';
+  const user = getCurrentUser();
+  if (!user) {
+    document.getElementById('login-overlay').style.display = 'flex';
+    return;
   }
-  if (sheetUrl) { document.getElementById('sheet-url-input').value = sheetUrl; updateSheetStatus(true); }
-  renderRoomSettings();
-  renderBookings();
+  document.getElementById('login-overlay').style.display = 'none';
+  initApp();
 };
 
 // ===== NAV =====

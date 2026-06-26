@@ -683,7 +683,7 @@
 
 <script>
 // ===== AUTH & USER MANAGEMENT =====
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwG1od1IXD2h6-ir87ibdoEHx3b9kEL4HuqBpCeaFAC8ZQ3jNXNNwIoEZq6k6-f8w4Z/exec';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -715,10 +715,11 @@ async function fetchUsersFromSheet() {
 async function pushUsersToSheet(users) {
   if (!SHEET_URL) return;
   try {
-    await fetch(SHEET_URL, {
+    const url = SHEET_URL + (SHEET_URL.indexOf('?')>=0?'&':'?') + 'action=saveUsers';
+    await fetch(url, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action: 'saveUsers', users: users }),
+      body: JSON.stringify({ users: users }),
       redirect:'follow'
     });
   } catch(e) { /* silent fail */ }
@@ -1114,8 +1115,9 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var action = (e && e.parameter && e.parameter.action) || data.action || '';
     // Lưu users riêng
-    if (data.action === 'saveUsers') {
+    if (action === 'saveUsers') {
       saveUsers(ss, data.users || []);
       return jsonOut({ ok: true });
     }

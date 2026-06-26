@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nbc-v2.8';
+const CACHE_NAME = 'nbc-v2.9';
 
 const ASSETS = [
   './',
@@ -31,6 +31,7 @@ self.addEventListener('activate', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {
+   if (e.request.method !== 'GET') return;
   e.respondWith(
     fetch(e.request)
       .then(function(res) {

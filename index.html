@@ -407,6 +407,7 @@
     </div>
     <div class="filter-bar" style="padding-top:10px">
       <button class="filter-chip active" id="filter-all" onclick="setFilter('all')">Tất cả</button>
+      <button class="filter-chip" id="filter-chuadieu" onclick="setFilter('chuadieu')">🚗 Chưa điều</button>
       <button class="filter-chip" id="filter-incomplete" onclick="setFilter('incomplete')">Chưa hoàn thành</button>
       <button class="filter-chip" id="filter-today" onclick="setFilter('today')">Hôm nay</button>
       <button class="filter-chip" id="filter-month" onclick="setFilter('month')">Tháng này</button>
@@ -687,12 +688,40 @@ const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
 const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-data'];
+const BOOKING_FEATURES = ['booking-edit-points','booking-points-status','booking-delete'];
 
 function getUsers() {
   return JSON.parse(localStorage.getItem('nbc_users') || '[]');
 }
 function saveUsers(users) {
   localStorage.setItem('nbc_users', JSON.stringify(users));
+  // Đồng bộ users lên Sheets ngay khi có thay đổi
+  pushUsersToSheet(users).catch(function(){});
+}
+
+async function fetchUsersFromSheet() {
+  try {
+    const url = SHEET_URL + (SHEET_URL.indexOf('?')>=0?'&':'?') + 'action=getUsers';
+    const res = await fetch(url, { method:'GET', redirect:'follow' });
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.users)) {
+      localStorage.setItem('nbc_users', JSON.stringify(data.users));
+      return data.users;
+    }
+  } catch(e) { /* offline fallback */ }
+  return null;
+}
+
+async function pushUsersToSheet(users) {
+  if (!SHEET_URL) return;
+  try {
+    await fetch(SHEET_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'saveUsers', users: users }),
+      redirect:'follow'
+    });
+  } catch(e) { /* silent fail */ }
 }
 function getAdminPass() {
   return localStorage.getItem('nbc_admin_pass') || DEFAULT_ADMIN_PASS;
@@ -708,20 +737,26 @@ function setCurrentUser(u) {
   sessionStorage.setItem('nbc_session', JSON.stringify(u));
 }
 
-function doLogin() {
+async function doLogin() {
   const uname = document.getElementById('login-username').value.trim();
   const pass = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
+  const btnLogin = document.querySelector('#login-overlay .btn-main');
   errEl.style.display = 'none';
 
-  // Admin login
+  // Admin login — không cần fetch Sheets
   if (uname === ADMIN_USERNAME && pass === getAdminPass()) {
-    setCurrentUser({ username: ADMIN_USERNAME, role: 'admin', features: ALL_FEATURES });
+    setCurrentUser({ username: ADMIN_USERNAME, role: 'admin', features: ALL_FEATURES.concat(SETTINGS_FEATURES) });
     document.getElementById('login-overlay').style.display = 'none';
     initApp();
     return;
   }
-  // User login
+
+  // Non-admin: fetch users từ Sheets trước
+  if (btnLogin) { btnLogin.disabled = true; btnLogin.textContent = '⏳ Đang xác thực...'; }
+  await fetchUsersFromSheet(); // cập nhật localStorage từ Sheets
+  if (btnLogin) { btnLogin.disabled = false; btnLogin.textContent = 'Đăng nhập'; }
+
   const users = getUsers();
   const u = users.find(function(x){ return x.username === uname && x.password === pass; });
   if (u) {
@@ -795,6 +830,14 @@ function initApp() {
   renderBookings();
   renderUserSettings();
   switchTab(firstTab);
+
+  // Auto-pull khi mở app
+  setTimeout(function() { syncPull(true); }, 1500);
+
+  // Auto-pull khi user quay lại tab/app
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') syncPull(true);
+  });
 }
 
 function renderUserSettings() {
@@ -805,7 +848,7 @@ function renderUserSettings() {
     el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Chưa có người dùng nào</div>';
     return;
   }
-  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-data':'Dữ liệu / Xuất Excel'};
+  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-data':'Dữ liệu / Xuất Excel','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking'};
   el.innerHTML = users.map(function(u,i){
     const fLabels = (u.features||[]).map(function(f){ return featureLabels[f]||f; }).join(', ') || 'Không có quyền';
     return '<div class="room-item">'+
@@ -831,8 +874,8 @@ function showEditUserForm(idx) {
 function showUserForm(idx) {
   const users = getUsers();
   const u = idx !== null ? users[idx] : null;
-  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-data':'💾 Dữ liệu / Xuất Excel'};
-  const allFeaturesToShow = ALL_FEATURES.concat(SETTINGS_FEATURES);
+  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-data':'💾 Dữ liệu / Xuất Excel','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking'};
+  const allFeaturesToShow = ALL_FEATURES.concat(SETTINGS_FEATURES).concat(BOOKING_FEATURES);
   const checkboxes = allFeaturesToShow.map(function(f){
     const checked = u && (u.features||[]).includes(f) ? 'checked' : '';
     return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);padding:4px 0;cursor:pointer">'+
@@ -860,7 +903,7 @@ function showUserForm(idx) {
 function saveUserForm(idx) {
   const uname = (document.getElementById('uf-username')||{}).value||'';
   const pass = (document.getElementById('uf-password')||{}).value||'';
-  const features = ALL_FEATURES.concat(SETTINGS_FEATURES).filter(function(f){ return document.getElementById('uf-'+f) && document.getElementById('uf-'+f).checked; });
+  const features = ALL_FEATURES.concat(SETTINGS_FEATURES).concat(BOOKING_FEATURES).filter(function(f){ return document.getElementById('uf-'+f) && document.getElementById('uf-'+f).checked; });
   if (!uname.trim()) { showToast('⚠️ Vui lòng nhập tên đăng nhập'); return; }
   if (uname === ADMIN_USERNAME) { showToast('⚠️ Tên đăng nhập đã được sử dụng'); return; }
   const users = getUsers();
@@ -984,9 +1027,16 @@ function saveSheetUrl() {
   updateSheetStatus(true);
   showToast('✓ Đã lưu link trang tính');
 }
-async function syncPush() {
-  if (!sheetUrl) { showToast('⚠️ Chưa có link trang tính'); return; }
-  showToast('⏳ Đang đẩy lên trang tính...');
+// ===== AUTO SYNC =====
+let autoSyncTimer = null;
+function scheduleAutoSync() {
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(function() { syncPush(true); }, 4000);
+}
+
+async function syncPush(silent) {
+  if (!sheetUrl) { if (!silent) showToast('⚠️ Chưa có link trang tính'); return; }
+  if (!silent) showToast('⏳ Đang đẩy lên trang tính...');
   try {
     const res = await fetch(sheetUrl, {
       method:'POST',
@@ -1000,25 +1050,28 @@ async function syncPush() {
       redirect:'follow'
     });
     const data = await res.json();
-    if (data.ok) showToast('✓ Đã đẩy lên trang tính (' + data.count + ' booking)');
-    else showToast('❌ Lỗi: ' + (data.error || 'không rõ'));
-  } catch(e){ showToast('❌ Lỗi kết nối: ' + e.message); }
+    if (!silent) {
+      if (data.ok) showToast('✓ Đã đẩy lên trang tính (' + data.count + ' booking)');
+      else showToast('❌ Lỗi: ' + (data.error || 'không rõ'));
+    }
+  } catch(e){ if (!silent) showToast('❌ Lỗi kết nối: ' + e.message); }
 }
-async function syncPull() {
-  if (!sheetUrl) { showToast('⚠️ Chưa có link trang tính'); return; }
-  if (!confirm('Tải dữ liệu từ trang tính sẽ GHI ĐÈ toàn bộ dữ liệu trên máy này. Tiếp tục?')) return;
-  showToast('⏳ Đang tải về...');
+
+async function syncPull(silent) {
+  if (!sheetUrl) { if (!silent) showToast('⚠️ Chưa có link trang tính'); return; }
+  if (!silent && !confirm('Tải dữ liệu từ trang tính sẽ GHI ĐÈ toàn bộ dữ liệu trên máy này. Tiếp tục?')) return;
+  if (!silent) showToast('⏳ Đang tải về...');
   try {
     const res = await fetch(sheetUrl + (sheetUrl.indexOf('?')>=0?'&':'?') + 'action=pull', { method:'GET', redirect:'follow' });
     const data = await res.json();
-    if (!data.ok) { showToast('❌ Lỗi: ' + (data.error || 'không rõ')); return; }
+    if (!data.ok) { if (!silent) showToast('❌ Lỗi: ' + (data.error || 'không rõ')); return; }
     if (Array.isArray(data.bookings)) { bookings = data.bookings; localStorage.setItem('nbc_bookings', JSON.stringify(bookings)); }
     if (Array.isArray(data.rooms)) { rooms = data.rooms; localStorage.setItem('nbc_rooms', JSON.stringify(rooms)); }
     if (Array.isArray(data.partners)) { partners = data.partners; localStorage.setItem('nbc_partners', JSON.stringify(partners)); }
     if (data.customers && typeof data.customers === 'object') localStorage.setItem('nbc_customers', JSON.stringify(data.customers));
     renderRoomSettings(); renderBookings();
-    showToast('✓ Đã tải về (' + bookings.length + ' booking)');
-  } catch(e){ showToast('❌ Lỗi kết nối: ' + e.message); }
+    if (!silent) showToast('✓ Đã tải về (' + bookings.length + ' booking)');
+  } catch(e){ if (!silent) showToast('❌ Lỗi kết nối: ' + e.message); }
 }
 function showAppsScriptHelp() {
   const popup = document.createElement('div');
@@ -1061,6 +1114,11 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
+    // Lưu users riêng
+    if (data.action === 'saveUsers') {
+      saveUsers(ss, data.users || []);
+      return jsonOut({ ok: true });
+    }
     saveData(ss, {
       bookings: data.bookings || [],
       rooms: data.rooms || [],
@@ -1077,12 +1135,31 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
 function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var params = e && e.parameter ? e.parameter : {};
+    // Trả về danh sách users
+    if (params.action === 'getUsers') {
+      var users = loadUsers(ss);
+      return jsonOut({ ok: true, users: users });
+    }
     var parsed = loadData(ss) || { bookings: [], rooms: [], partners: [], customers: {} };
     parsed.ok = true;
     return jsonOut(parsed);
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
   }
+}
+
+function saveUsers(ss, users) {
+  var sh = ss.getSheetByName('NBC_USERS') || ss.insertSheet('NBC_USERS');
+  sh.clearContents();
+  sh.getRange(1,1).setValue(JSON.stringify(users));
+}
+
+function loadUsers(ss) {
+  var sh = ss.getSheetByName('NBC_USERS');
+  if (!sh || sh.getLastRow() < 1) return [];
+  var val = sh.getRange(1,1).getValue();
+  return val ? JSON.parse(val) : [];
 }
 
 function saveData(ss, payload) {
@@ -1383,6 +1460,7 @@ function saveToBooking() {
   }
   bookings.unshift(booking);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
   showToast('✓ Đã thêm vào Booking: ' + booking.id);
   // reset lựa chọn khách về mặc định
   if (document.getElementById('cb-khach-le')) document.getElementById('cb-khach-le').checked = true;
@@ -1394,7 +1472,7 @@ function saveToBooking() {
 // ===== BOOKING LIST =====
 function setFilter(f) {
   currentFilter = f;
-  ['all','incomplete','today','month'].forEach(x => {
+  ['all','chuadieu','incomplete','today','month'].forEach(x => {
     document.getElementById('filter-'+x).classList.toggle('active', x===f);
   });
   renderBookings();
@@ -1407,6 +1485,7 @@ function renderBookings() {
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
   let filtered = bookings.filter(b => {
     if (search && !b.phone.includes(search)) return false;
+    if (currentFilter === 'chuadieu') return b.statusDrive !== 'done';
     if (currentFilter === 'incomplete') return b.statusDrive !== 'done' || b.statusPay !== 'paid';
     if (currentFilter === 'today') return b.date === todayStr;
     if (currentFilter === 'month') return b.date.endsWith(monthStr);
@@ -1429,11 +1508,13 @@ function renderBookings() {
     html += '<div class="booking-route" onclick="openDetail(\''+b.id+'\')">📍 '+(b.route||'—')+'</div>';
     html += '<div class="booking-footer">';
     html += '<div class="booking-date" onclick="openDetail(\''+b.id+'\')">📅 '+(b.date||'—')+'</div>';
-    html += '<div style="display:flex;align-items:center;gap:6px">';
-    html += '<button class="btn-sm" style="font-size:11px;padding:4px 8px;color:var(--gd);border-color:var(--gb)" onclick="showPointsPopup(\''+b.id+'\')">🏆'+(b.points?' '+b.points+' đ':' Điểm')+'</button>';
-    html += '<span class="badge '+(b.statusDrive==='done'?'done':'processing')+'" onclick="openDetail(\''+b.id+'\')">'+(b.statusDrive==='done'?'✅ Đã điều':'🟡 Đang xử lý')+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">';
+    html += '<button class="btn-sm" style="font-size:11px;padding:3px 7px;color:var(--gd);border-color:var(--gb)" onclick="showPointsPopup(\''+b.id+'\')">🏆'+(b.points?' '+b.points+'đ':' Điểm')+'</button>';
+    html += '<span class="badge '+(b.statusDrive==='done'?'done':'processing')+'" onclick="openDetail(\''+b.id+'\')">'+(b.statusDrive==='done'?'✅ Đã điều':'🚗 Chưa điều')+'</span>';
+    const isDone = b.statusDrive==='done' && b.statusPay==='paid';
+    html += '<span class="badge '+(isDone?'done':'unpaid')+'" onclick="openDetail(\''+b.id+'\')">'+(isDone?'✔ Hoàn thành':'⏳ Chưa xong')+'</span>';
     html += '</div></div>';
-    if (pointsAmt) html += '<div style="font-size:11px;color:var(--gm);margin-top:4px">🏆 '+b.room+' • '+b.points+' điểm • '+pointsAmt+'</div>';
+    if (b.points) html += '<div style="font-size:11px;color:var(--gm);margin-top:3px">🏆 '+(b.room||'—')+' • '+b.points+'đ'+(pointsAmt?' • '+pointsAmt:'')+'</div>';
     html += '</div>';
   });
   el.innerHTML = html;
@@ -1457,7 +1538,7 @@ function showPointsPopup(id) {
     + '</div>'
     + '<div id="pp-result" style="background:var(--gl);border-radius:8px;padding:10px;font-size:13px;color:var(--gt);font-weight:500;margin-bottom:12px;min-height:38px">Chọn Room và nhập điểm để tính tiền</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<button class="btn-save" onclick="savePointsPopup(\''+id+'\')">💾 Lưu</button>'
+    + (function(){ const cu=getCurrentUser(); const canEdit=!cu||cu.role==='admin'||(cu.features||[]).includes('booking-edit-points'); return canEdit ? '<button class="btn-save" onclick="savePointsPopup(\'' + id + '\')">💾 Lưu</button>' : '<div style="font-size:12px;color:var(--text3)">⛔ Bạn không có quyền sửa điểm</div>'; })()
     + '<button class="btn-save" style="background:var(--text3)" onclick="document.getElementById(\'points-popup\').remove()">Huỷ</button>'
     + '</div></div>';
   document.body.appendChild(popup);
@@ -1486,6 +1567,7 @@ function savePointsPopup(id) {
   b.room = document.getElementById('pp-room').value;
   b.points = document.getElementById('pp-points').value;
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
   document.getElementById('points-popup').remove();
   renderBookings();
   showToast('✓ Đã lưu điểm');
@@ -1541,7 +1623,7 @@ function openDetail(id) {
   // TIN NHẮN
   html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div><div class="card-body" style="gap:8px">';
   html += '<button class="btn-main" style="background:var(--gt);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'driver\')">🚘 Xem tin điều xe</button>';
-  html += '<button class="btn-main" style="background:var(--blue);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'confirm_en\')">✅ Xem tin xác nhận (EN)</button>';
+  html += '<button class="btn-main" style="background:var(--blue);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'confirm\')">✅ Xem tin xác nhận VI/EN</button>';
   html += '</div></div><div class="pb"></div>';
 
   document.getElementById('detail-body').innerHTML = html;
@@ -1551,8 +1633,11 @@ function openDetail(id) {
 function showMsgPopup(id, type) {
   const b = bookings.find(function(x){ return x.id === id; });
   if (!b) return;
-  const title = type === 'driver' ? '🚘 Tin điều xe' : '✅ Tin xác nhận (EN)';
-  const text = type === 'driver' ? (b.driverMsg||'') : (b.confirmEN||'');
+  const isConfirmType = type === 'confirm_vi' || type === 'confirm_en' || type === 'confirm';
+  const title = type === 'driver' ? '🚘 Tin điều xe' : '✅ Tin xác nhận';
+  const textVI = b.confirmVI || '';
+  const textEN = b.confirmEN || '';
+  const text = type === 'driver' ? (b.driverMsg||'') : (type === 'confirm_en' ? textEN : textVI);
   const popup = document.createElement('div');
   popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
   const inner = document.createElement('div');
@@ -1572,10 +1657,39 @@ function showMsgPopup(id, type) {
   closeBtn.onclick = function(){ popup.remove(); };
   btns.appendChild(copyBtn); btns.appendChild(closeBtn);
   head.appendChild(btns);
-  const body = document.createElement('div');
-  body.style.cssText = 'font-size:14px;white-space:pre-wrap;line-height:1.9;color:var(--text);background:var(--gl);padding:12px;border-radius:8px';
-  body.textContent = text || '—';
-  inner.appendChild(head); inner.appendChild(body);
+  const bodyWrap = document.createElement('div');
+  if (type !== 'driver') {
+    // Tab VI / EN
+    let curLang = type === 'confirm_en' ? 'en' : 'vi';
+    const tabBar = document.createElement('div');
+    tabBar.style.cssText = 'display:flex;gap:4px;margin-bottom:8px';
+    tabBar.innerHTML = '<button id="mp-tab-vi" style="flex:1;padding:7px;border:1.5px solid var(--gb);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:'+(curLang==='vi'?'var(--gd)':'white')+';color:'+(curLang==='vi'?'white':'var(--text2)')+'">🇻🇳 Tiếng Việt</button>'
+      + '<button id="mp-tab-en" style="flex:1;padding:7px;border:1.5px solid var(--gb);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:'+(curLang==='en'?'var(--gd)':'white')+';color:'+(curLang==='en'?'white':'var(--text2)')+'">🇬🇧 English</button>';
+    const msgBody = document.createElement('div');
+    msgBody.id = 'mp-body';
+    msgBody.style.cssText = 'font-size:14px;white-space:pre-wrap;line-height:1.9;color:var(--text);background:var(--gl);padding:12px;border-radius:8px';
+    msgBody.textContent = (curLang === 'vi' ? textVI : textEN) || '—';
+    function switchMpLang(lang) {
+      curLang = lang;
+      msgBody.textContent = (lang === 'vi' ? textVI : textEN) || '—';
+      document.getElementById('mp-tab-vi').style.background = lang==='vi'?'var(--gd)':'white';
+      document.getElementById('mp-tab-vi').style.color = lang==='vi'?'white':'var(--text2)';
+      document.getElementById('mp-tab-en').style.background = lang==='en'?'var(--gd)':'white';
+      document.getElementById('mp-tab-en').style.color = lang==='en'?'white':'var(--text2)';
+      copyBtn.onclick = function(){ navigator.clipboard.writeText(lang==='vi'?textVI:textEN).then(function(){ showToast('✓ Đã copy!'); }); };
+    }
+    tabBar.querySelector('#mp-tab-vi').onclick = function(){ switchMpLang('vi'); };
+    tabBar.querySelector('#mp-tab-en').onclick = function(){ switchMpLang('en'); };
+    copyBtn.onclick = function(){ navigator.clipboard.writeText(curLang==='vi'?textVI:textEN).then(function(){ showToast('✓ Đã copy!'); }); };
+    bodyWrap.appendChild(tabBar);
+    bodyWrap.appendChild(msgBody);
+  } else {
+    const body = document.createElement('div');
+    body.style.cssText = 'font-size:14px;white-space:pre-wrap;line-height:1.9;color:var(--text);background:var(--gl);padding:12px;border-radius:8px';
+    body.textContent = text || '—';
+    bodyWrap.appendChild(body);
+  }
+  inner.appendChild(head); inner.appendChild(bodyWrap);
   popup.appendChild(inner);
   document.body.appendChild(popup);
   popup.addEventListener('click', function(e){ if (e.target === popup) popup.remove(); });
@@ -1587,10 +1701,18 @@ function closeDetail() {
 }
 
 function updateStatus(id, field, value) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  // Kiểm tra quyền thu điểm
+  if (field === 'statusPoints' && !isAdmin && !feats.includes('booking-points-status')) {
+    showToast('⛔ Bạn không có quyền thay đổi tình trạng thu điểm'); return;
+  }
   const b = bookings.find(function(x){ return x.id === id; });
   if (!b) return;
   b[field] = value;
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
   openDetail(id);
 }
 
@@ -1602,10 +1724,17 @@ function updateBookingField(id, field, value) {
 }
 
 function deleteBooking() {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-delete')) {
+    showToast('⛔ Bạn không có quyền xoá booking'); return;
+  }
   if (!currentDetailId) return;
   if (!confirm('Xoá booking này?')) return;
   bookings = bookings.filter(function(x){ return x.id !== currentDetailId; });
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
   closeDetail();
   showToast('✓ Đã xoá booking');
 }
@@ -2232,42 +2361,13 @@ function showToast(msg){
 }
 </script>
 <script>
-<script>
 if ('serviceWorker' in navigator && location.hostname !== 'www.claudeusercontent.com') {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').then(function(reg) {
-      reg.addEventListener('updatefound', function() {
-        const newSW = reg.installing;
-        newSW.addEventListener('statechange', function() {
-          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateBanner();
-          }
-        });
-      });
-    });
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', function() {
-      if (!refreshing) { refreshing = true; location.reload(); }
-    });
-  });
-}
-
-function showUpdateBanner() {
-  if (document.getElementById('update-banner')) return;
-  const banner = document.createElement('div');
-  banner.id = 'update-banner';
-  banner.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1A5C38;color:white;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap';
-  banner.innerHTML = '🆕 Có phiên bản mới <button onclick="doUpdate()" style="background:white;color:#1A5C38;border:none;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">Cập nhật</button>';
-  document.body.appendChild(banner);
-}
-
-function doUpdate() {
-  navigator.serviceWorker.getRegistration().then(function(reg) {
-    if (reg && reg.waiting) {
-      reg.waiting.postMessage('skipWaiting');
-    } else {
-      location.reload(true);
-    }
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) { console.log('SW registered:', reg.scope); })
+      .catch(function(err) { console.log('SW error:', err); });
   });
 }
 </script>
+</body>
+</html>

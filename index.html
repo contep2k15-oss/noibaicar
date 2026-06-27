@@ -57,9 +57,9 @@
   .screen.active{display:flex}
   .scroll-body{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   .input-zone{flex-shrink:0;padding:12px 14px;background:var(--bg);border-bottom:0.5px solid var(--gb);display:flex;flex-direction:column;gap:10px}
-  .results-zone{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .results-zone{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   /* BOOKING SCROLL */
-  #booking-list{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  #booking-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 
   /* CARDS */
   .card{background:var(--white);border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -168,7 +168,7 @@
   .settings-header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
   .btn-back{width:32px;height:32px;background:rgba(255,255,255,.15);border:none;border-radius:8px;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .settings-title{font-size:15px;font-weight:600;color:white}
-  .settings-body{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .settings-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
   .settings-body > *{flex-shrink:0}
   .settings-section{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:4px 0}
   .settings-card{background:white;border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.3';
+const APP_VERSION = '5.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1310,6 +1310,19 @@ function styleHeader(sh, numCols) {
   sh.setFrozenRows(1);
 }
 
+function formatPhone(phone) {
+  if (!phone) return '';
+  var p = String(phone).trim();
+  // Đã có mã quốc gia
+  if (p.startsWith('+')) return p;
+  // SĐT Việt Nam: bắt đầu bằng 0 → đổi thành +84
+  if (/^0[3-9]\d{8}$/.test(p)) return '+84' + p.substring(1);
+  // Có 84 ở đầu không có +
+  if (p.startsWith('84') && p.length >= 11) return '+' + p;
+  // Giữ nguyên và format text để không mất số 0
+  return "'" + p;
+}
+
 function writeBookings(ss, bookings) {
   var sh = ss.getSheetByName('NBC_BOOKINGS') || ss.insertSheet('NBC_BOOKINGS');
   sh.clearContents();
@@ -1317,7 +1330,7 @@ function writeBookings(ss, bookings) {
   var rows = [headers];
   (bookings || []).forEach(function(b) {
     rows.push([
-      b.id||'', b.name||'', b.phone||'', b.date||'', b.route||'',
+      b.id||'', b.name||'', formatPhone(b.phone), b.date||'', b.route||'',
       b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'',
       (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'',
       b.statusDrive||'', b.statusPay||'', b.statusPoints||'',
@@ -1347,7 +1360,7 @@ function writePartners(ss, partners) {
   var rows = [headers];
   (partners || []).forEach(function(p) {
     rows.push([
-      p.id||'', p.name||'', p.phone||'', p.country||'',
+      p.id||'', p.name||'', formatPhone(p.phone), p.country||'',
       p.address||'', p.email||'', p.note||'',
       (p.bookingIds||[]).length
     ]);
@@ -1363,7 +1376,7 @@ function writeCustomers(ss, customers) {
   var rows = [headers];
   Object.keys(customers || {}).forEach(function(key) {
     var c = customers[key];
-    rows.push([key, (c.tags||[]).join(', '), c.note||'']);
+    rows.push([formatPhone(key), (c.tags||[]).join(', '), c.note||'']);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
   styleHeader(sh, headers.length);

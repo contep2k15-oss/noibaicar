@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.4';
+const APP_VERSION = '5.5';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1724,18 +1724,24 @@ function renderResults(list, isTK, isCK, bienTen) {
     cbKhachLe.type = 'checkbox';
     cbKhachLe.id = 'cb-khach-le-' + id;
     cbKhachLe.checked = true;
-    cbKhachLe.onchange = (function(i){ return function(){ handleCheckKhachLeDyn(i); }; })(id);
+    const spKL1 = document.createElement('span'); spKL1.className = 'check-box';
+    const spKL2 = document.createElement('span'); spKL2.className = 'check-label'; spKL2.textContent = '👤 Khách lẻ';
     lbKhachLe.appendChild(cbKhachLe);
-    lbKhachLe.innerHTML += '<span class="check-box"></span><span class="check-label">👤 Khách lẻ</span>';
+    lbKhachLe.appendChild(spKL1);
+    lbKhachLe.appendChild(spKL2);
+    cbKhachLe.onchange = (function(i){ return function(){ handleCheckKhachLeDyn(i); }; })(id);
 
     const lbDoiTac = document.createElement('label');
     lbDoiTac.className = 'check-item';
     const cbDoiTac = document.createElement('input');
     cbDoiTac.type = 'checkbox';
     cbDoiTac.id = 'cb-doi-tac-' + id;
-    cbDoiTac.onchange = (function(i){ return function(){ handleCheckDoiTacDyn(i); }; })(id);
+    const spDT1 = document.createElement('span'); spDT1.className = 'check-box';
+    const spDT2 = document.createElement('span'); spDT2.className = 'check-label'; spDT2.textContent = '🤝 Đối tác';
     lbDoiTac.appendChild(cbDoiTac);
-    lbDoiTac.innerHTML += '<span class="check-box"></span><span class="check-label">🤝 Đối tác</span>';
+    lbDoiTac.appendChild(spDT1);
+    lbDoiTac.appendChild(spDT2);
+    cbDoiTac.onchange = (function(i){ return function(){ handleCheckDoiTacDyn(i); }; })(id);
 
     checkRow.appendChild(lbKhachLe);
     checkRow.appendChild(lbDoiTac);

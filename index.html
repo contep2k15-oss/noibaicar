@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '6.7';
+const APP_VERSION = '6.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1132,7 +1132,67 @@ function showAppsScriptHelp() {
   popup.addEventListener('click', function(e){ if (e.target === popup) popup.remove(); });
 }
 
-const APPS_SCRIPT_CODE = `function doPost(e) {
+const APPS_SCRIPT_CODE = `// ===== CẤU HÌNH TELEGRAM =====
+var TELEGRAM_TOKEN = '7886466527:AAFXhzjiHdEh8TunH4Tl9xk9R1pSyJZ8R4I';
+var TELEGRAM_CHAT_ID = '-1003952844118';
+
+function sendTelegram(msg) {
+  try {
+    UrlFetchApp.fetch('https://api.telegram.org/bot' + TELEGRAM_TOKEN + '/sendMessage', {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: msg,
+        parse_mode: 'Markdown'
+      }),
+      muteHttpExceptions: true
+    });
+  } catch(e) {}
+}
+
+function formatMoney(val) {
+  if (!val) return '';
+  var s = String(val).trim().toLowerCase().replace(/,/g, '');
+  var dots = (s.match(/\./g)||[]).length;
+  if (dots > 1) s = s.replace(/\./g, '');
+  else if (dots === 1 && s.split('.')[1].length === 3) s = s.replace('.', '');
+  var num = s.endsWith('tr') ? parseFloat(s)*1000000 : s.endsWith('k') ? parseFloat(s)*1000 : parseFloat(s)||0;
+  return num.toLocaleString('vi-VN') + ' VND';
+}
+
+function notifyNewBooking(booking) {
+  var msg = '🔔 *Booking mới — ' + (booking.id||'') + '*\n'
+    + '👤 ' + (booking.name||'Khách') + (booking.phone ? ' • ' + booking.phone : '') + '\n'
+    + '📅 ' + (booking.date||'—') + '\n'
+    + '📍 ' + (booking.route||'—') + '\n'
+    + '🚗 ' + (booking.vehicle||'—') + '\n'
+    + '💰 VP: *' + formatMoney(booking.priceVP) + '*'
+    + (booking.custType==='doitac' ? '\n🤝 Đối tác: ' + (booking.partnerName||'') : '');
+  sendTelegram(msg);
+}
+
+function notifyUnassigned(bookings) {
+  var now = new Date();
+  var alerts = [];
+  (bookings||[]).forEach(function(b) {
+    if (b.statusDrive !== 'processing' || !b.date) return;
+    try {
+      var parts = b.date.split('/');
+      if (parts.length < 3) return;
+      var bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+      var diffHours = (bd - now) / (1000*60*60);
+      if (diffHours >= 0 && diffHours <= 3) {
+        alerts.push('⚠️ *' + (b.id||'') + '* — ' + (b.name||'') + '\n📍 ' + (b.route||'—') + ' • ' + (b.date||''));
+      }
+    } catch(e) {}
+  });
+  if (alerts.length) {
+    sendTelegram('🚨 *Cảnh báo chưa điều xe*\n\n' + alerts.join('\n\n'));
+  }
+}
+
+function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1156,6 +1216,18 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
     writeCustomers(ss, data.customers || {});
     if (data.users && data.users.length) saveUsers(ss, data.users);
     writeBaoCao(ss, data.bookings || [], data.rooms || [], data.partners || []);
+    // Thông báo Telegram cho booking mới nhất
+    var newBookings = data.bookings || [];
+    if (newBookings.length > 0) {
+      var newest = newBookings[0];
+      var lastNotified = PropertiesService.getScriptProperties().getProperty('last_notified_id');
+      if (newest.id && newest.id !== lastNotified) {
+        notifyNewBooking(newest);
+        PropertiesService.getScriptProperties().setProperty('last_notified_id', newest.id);
+      }
+    }
+    // Cảnh báo chưa điều xe trong 3 giờ tới
+    notifyUnassigned(data.bookings || []);
     return jsonOut({ ok: true, count: (data.bookings || []).length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
@@ -2277,8 +2349,55 @@ function openDetail(id) {
   btnConfirm.style.cssText = 'background:var(--blue);font-size:13px;padding:10px';
   btnConfirm.innerHTML = '✅ Xem tin xác nhận VI/EN';
   btnConfirm.onclick = (function(bid){ return function(){ showMsgPopup(bid,'confirm'); }; })(id);
+
+  // Divider
+  const divider = document.createElement('div');
+  divider.style.cssText = 'font-size:11px;color:var(--text3);text-align:center;padding:4px 0';
+  divider.textContent = '— Gửi cho khách —';
+
+  // Nút Zalo/WhatsApp
+  const shareRow = document.createElement('div');
+  shareRow.style.cssText = 'display:flex;gap:8px';
+
+  const langSel = document.createElement('select');
+  langSel.id = 'share-lang-'+id;
+  langSel.style.cssText = 'flex:1;padding:8px 10px;border:0.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)';
+  langSel.innerHTML = '<option value="vi">VI — Tiếng Việt</option><option value="en">EN — English</option>';
+
+  const btnZalo = document.createElement('button');
+  btnZalo.className = 'btn-main';
+  btnZalo.style.cssText = 'flex:1;background:#0068FF;font-size:13px;padding:9px';
+  btnZalo.innerHTML = '💬 Zalo';
+  btnZalo.onclick = (function(bid){ return function(){
+    const b = bookings.find(function(x){ return x.id===bid; });
+    if (!b) return;
+    const lang = document.getElementById('share-lang-'+bid).value;
+    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
+    const phone = (b.phone||'').replace(/[^0-9+]/g,'');
+    window.open('https://zalo.me/'+phone+'?text='+encodeURIComponent(txt), '_blank');
+  }; })(id);
+
+  const btnWA = document.createElement('button');
+  btnWA.className = 'btn-main';
+  btnWA.style.cssText = 'flex:1;background:#25D366;font-size:13px;padding:9px';
+  btnWA.innerHTML = '💬 WhatsApp';
+  btnWA.onclick = (function(bid){ return function(){
+    const b = bookings.find(function(x){ return x.id===bid; });
+    if (!b) return;
+    const lang = document.getElementById('share-lang-'+bid).value;
+    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
+    const phone = (b.phone||'').replace(/[^0-9+]/g,'').replace(/^0/,'+84');
+    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(txt), '_blank');
+  }; })(id);
+
+  shareRow.appendChild(langSel);
+  shareRow.appendChild(btnZalo);
+  shareRow.appendChild(btnWA);
+
   tinNhanBody.appendChild(btnDriver);
   tinNhanBody.appendChild(btnConfirm);
+  tinNhanBody.appendChild(divider);
+  tinNhanBody.appendChild(shareRow);
   tinNhanCard.appendChild(tinNhanHead);
   tinNhanCard.appendChild(tinNhanBody);
 

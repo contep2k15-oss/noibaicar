@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.6';
+const APP_VERSION = '5.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1148,10 +1148,14 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
       customers: data.customers || {}
     });
     writeBookings(ss, data.bookings || []);
+    // Xoá sheet Bookings cũ nếu còn tồn tại
+    var oldSh = ss.getSheetByName('Bookings');
+    if (oldSh) ss.deleteSheet(oldSh);
     writeRooms(ss, data.rooms || []);
     writePartners(ss, data.partners || []);
     writeCustomers(ss, data.customers || {});
     if (data.users && data.users.length) saveUsers(ss, data.users);
+    writeBaoCao(ss, data.bookings || [], data.rooms || [], data.partners || []);
     return jsonOut({ ok: true, count: (data.bookings || []).length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
@@ -1380,6 +1384,118 @@ function writeCustomers(ss, customers) {
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
   styleHeader(sh, headers.length);
+}
+
+function writeBaoCao(ss, bookings, rooms, partners) {
+  var sh = ss.getSheetByName('NBC_BAOCAO') || ss.insertSheet('NBC_BAOCAO');
+  sh.clearContents();
+  var rows = [];
+
+  // ===== TỔNG QUAN =====
+  rows.push(['TỔNG QUAN', '', '', '', '', '', '']);
+  rows.push(['Tổng chuyến', 'Đang xử lý', 'Đã điều', 'Chưa TT', 'Đã cọc', 'Đã TT', '']);
+
+  var totalChuyens = bookings.length;
+  var dangXuLy = bookings.filter(function(b){ return b.statusDrive==='processing'; }).length;
+  var daDieu = bookings.filter(function(b){ return b.statusDrive==='done'; }).length;
+  var chuaTT = bookings.filter(function(b){ return b.statusPay==='unpaid'; }).length;
+  var daCoc = bookings.filter(function(b){ return b.statusPay==='deposited'; }).length;
+  var daTT = bookings.filter(function(b){ return b.statusPay==='paid'; }).length;
+  rows.push([totalChuyens, dangXuLy, daDieu, chuaTT, daCoc, daTT, '']);
+  rows.push(['', '', '', '', '', '', '']);
+
+  rows.push(['Doanh thu VP', 'Chi phi dieu xe', 'Tien diem da thu', 'Tien diem chua thu', 'Doanh so thuc thu', '', '']);
+
+  function parseM(val) {
+    if (!val) return 0;
+    var s = String(val).trim().toLowerCase();
+    if (s.endsWith('tr')) return parseFloat(s) * 1000000;
+    if (s.endsWith('k')) return parseFloat(s) * 1000;
+    return parseFloat(s) || 0;
+  }
+  function calcPts(b) {
+    var r = null;
+    for (var i=0; i<rooms.length; i++) { if (rooms[i].name===b.room) { r=rooms[i]; break; } }
+    return (r && b.points) ? parseFloat(b.points) * r.rate : 0;
+  }
+
+  var doanhThuVP = bookings.reduce(function(s,b){ return s+parseM(b.priceVP); }, 0);
+  var chiPhiDieu = bookings.reduce(function(s,b){ return s+parseM(b.priceDriver); }, 0);
+  var diemDaThu = bookings.filter(function(b){ return b.statusPoints==='collected'; })
+    .reduce(function(s,b){ return s+calcPts(b); }, 0);
+  var diemChuaThu = bookings.filter(function(b){ return b.statusPoints!=='collected' && b.room && b.points; })
+    .reduce(function(s,b){ return s+calcPts(b); }, 0);
+  var doanhSo = doanhThuVP - chiPhiDieu + diemDaThu + diemChuaThu;
+  rows.push([doanhThuVP, chiPhiDieu, diemDaThu, diemChuaThu, doanhSo, '', '']);
+  rows.push(['', '', '', '', '', '', '']);
+
+  // ===== THEO ROOM =====
+  rows.push(['THEO ROOM', '', '', '', '', '', '']);
+  rows.push(['Room', 'Don gia (VND/diem)', 'So chuyen', 'Tong diem', 'Tong tien diem', 'Da thu', 'Chua thu']);
+  var roomStats = {};
+  bookings.forEach(function(b) {
+    if (!b.room) return;
+    var r = null;
+    for (var i=0; i<rooms.length; i++) { if (rooms[i].name===b.room) { r=rooms[i]; break; } }
+    if (!roomStats[b.room]) roomStats[b.room] = { rate: r?r.rate:0, count:0, totalPts:0, totalMoney:0, collected:0, uncollected:0 };
+    roomStats[b.room].count++;
+    if (b.points && r) {
+      var pts = parseFloat(b.points);
+      var money = pts * r.rate;
+      roomStats[b.room].totalPts += pts;
+      roomStats[b.room].totalMoney += money;
+      if (b.statusPoints==='collected') roomStats[b.room].collected += money;
+      else roomStats[b.room].uncollected += money;
+    }
+  });
+  Object.keys(roomStats).forEach(function(name) {
+    var s = roomStats[name];
+    rows.push([name, s.rate, s.count, s.totalPts, s.totalMoney, s.collected, s.uncollected]);
+  });
+  if (!Object.keys(roomStats).length) rows.push(['Khong co du lieu', '', '', '', '', '', '']);
+  rows.push(['', '', '', '', '', '', '']);
+
+  // ===== THEO ĐỐI TÁC =====
+  rows.push(['THEO ĐỐI TÁC', '', '', '', '', '', '']);
+  rows.push(['Doi tac', 'So chuyen', 'Doanh thu VP', 'Chi phi dieu xe', 'Lai gop', 'Chua TT', '']);
+  var partnerStats = {};
+  bookings.forEach(function(b) {
+    if (b.custType !== 'doitac' || !b.partnerId) return;
+    var key = b.partnerId;
+    if (!partnerStats[key]) {
+      var name = b.partnerName || key;
+      for (var i=0; i<partners.length; i++) { if (partners[i].id===key) { name=partners[i].name; break; } }
+      partnerStats[key] = { name:name, count:0, vp:0, cost:0, unpaid:0 };
+    }
+    partnerStats[key].count++;
+    partnerStats[key].vp += parseM(b.priceVP);
+    partnerStats[key].cost += parseM(b.priceDriver);
+    if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseM(b.priceVP);
+  });
+  Object.keys(partnerStats).forEach(function(key) {
+    var s = partnerStats[key];
+    rows.push([s.name, s.count, s.vp, s.cost, s.vp-s.cost, s.unpaid, '']);
+  });
+  if (!Object.keys(partnerStats).length) rows.push(['Khong co du lieu', '', '', '', '', '', '']);
+
+  // Ghi vào sheet
+  sh.getRange(1, 1, rows.length, 7).setValues(rows);
+
+  // Format section headers
+  var sectionRows = [1, 6, Object.keys(roomStats).length + 9, Object.keys(roomStats).length + 12];
+  // Style header chung
+  var titleRows = [];
+  for (var i=0; i<rows.length; i++) {
+    if (rows[i][0] === 'TỔNG QUAN' || rows[i][0] === 'THEO ROOM' || rows[i][0] === 'THEO ĐỐI TÁC') {
+      titleRows.push(i+1);
+    }
+  }
+  titleRows.forEach(function(r) {
+    var rng = sh.getRange(r, 1, 1, 7);
+    rng.setBackground('#1A5C38'); rng.setFontColor('#FFFFFF'); rng.setFontWeight('bold');
+    sh.getRange(r+1, 1, 1, 7).setBackground('#E8F5EE').setFontWeight('bold');
+  });
+  sh.setFrozenRows(0);
 }
 
 function jsonOut(obj) {
@@ -2801,7 +2917,7 @@ function fmtVND(num) {
 
 function calcPointsMoney(b) {
   const r = rooms.find(function(r){ return r.name === b.room; });
-  return (r && b.points) ? parseFloat(b.points) * r.rate * 1000 : 0;
+  return (r && b.points) ? parseFloat(b.points) * r.rate : 0;
 }
 
 function renderBaoCao() {

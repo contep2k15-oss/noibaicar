@@ -1382,13 +1382,18 @@ Giá dịch vụ CHỈ hiển thị trong tin xác nhận khi HIỂN THỊ GIÁ 
 
 MŨI TÊN điều xe: ➜. KÝ HIỆU nội bộ: "thu hộ vp","TK","CK","Your amount" → KHÔNG đưa vào tin xác nhận.
 
-ĐỊA DANH tin xác nhận: Nội Bài/HAN/T1/T2→"Sân bay Nội Bài"/"Hanoi Airport (HAN)", TSN/SGN→"Sân bay Tân Sơn Nhất"/"Tan Son Nhat Airport", DAD→"Sân bay Đà Nẵng"/"Da Nang Airport", HPH→"Sân bay Cát Bi Hải Phòng"/"Cat Bi Airport Hai Phong". Tin điều xe: tên ngắn.
+ĐỊA DANH tin xác nhận: Nội Bài/HAN→"Sân bay Nội Bài"/"Hanoi Airport (HAN)", TSN/SGN→"Sân bay Tân Sơn Nhất"/"Tan Son Nhat Airport", DAD→"Sân bay Đà Nẵng"/"Da Nang Airport", HPH→"Sân bay Cát Bi Hải Phòng"/"Cat Bi Airport Hai Phong". Tin điều xe: tên ngắn.
+
+TERMINAL: T1→"Terminal 1", T2→"Terminal 2". Không rõ terminal → bỏ trống, KHÔNG tự thêm.
 
 ĐỊA CHỈ: Thêm dấu tiếng Việt cho đường/phường/quận (không cho tên người). Tin điều xe: bỏ số nhà. Tin xác nhận: giữ số nhà đầy đủ.
 
-LOẠI CHUYẾN — tự nhận diện để điền đúng trường:
-- ĐÓN sân bay: thêm "• Giờ dự hạ" (VI) / "• Estimated landing time" (EN)
-- TIỄN sân bay: không có trường giờ dự hạ
+LOẠI CHUYẾN — nhận diện theo hướng lộ trình, không phụ thuộc từ khoá:
+- ĐÓN sân bay: điểm đón là sân bay (có mã bay) → thêm "• Giờ dự hạ" (VI) / "• Estimated landing time" (EN)
+- TIỄN sân bay: điểm trả là sân bay → không có trường giờ dự hạ
+- Nội địa: không có sân bay → xử lý bình thường
+
+NGÀY ĐÓN: Nếu tin nháp có ngày cụ thể → dùng ngày đó. Nếu không có ngày → dùng ngày hôm nay (${today}).
 
 "quay đầu/quay về": tin điều xe thêm (~HH:MM quay đầu) cuối dòng lộ trình.
 
@@ -1429,7 +1434,7 @@ Rồi điền các trường sau (bullet •, chỉ dòng có dữ liệu):
 • Flight number: [nếu có]
 • Amount: [CHỈ khi HIỂN THỊ GIÁ VP=có, format 300,000 VND]
 
-KHÔNG có lời chào, lời kết, câu hỏi terminal, câu cột 11. Chỉ thông tin thuần.
+KHÔNG có lời chào, lời kết, câu hỏi. Chỉ thông tin thuần.
 
 === ĐẦU RA ===
 1. "driver": 3 dòng cách nhau \n\n:
@@ -1440,10 +1445,11 @@ TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
+
 
   try {
     const raw = await callAPI(prompt);

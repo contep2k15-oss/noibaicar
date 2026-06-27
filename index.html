@@ -32,7 +32,7 @@
   .menu-overlay.active{display:flex}
   .menu-header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
   .menu-title{font-size:15px;font-weight:600;color:white}
-  .menu-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .menu-body{flex:1;padding:14px;display:flex;flex-direction:column;gap:10px}
   .menu-body > *{flex-shrink:0}
   .menu-item{display:flex;align-items:center;gap:14px;padding:16px;background:white;border:.5px solid var(--gb);border-radius:var(--radius);cursor:pointer;text-align:left;width:100%}
   .menu-item:active{background:var(--gl)}
@@ -55,11 +55,11 @@
   /* SCREENS */
   .screen{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
   .screen.active{display:flex}
-  .scroll-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .scroll-body{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   .input-zone{flex-shrink:0;padding:12px 14px;background:var(--bg);border-bottom:0.5px solid var(--gb);display:flex;flex-direction:column;gap:10px}
-  .results-zone{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .results-zone{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   /* BOOKING SCROLL */
-  #booking-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  #booking-list{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 
   /* CARDS */
   .card{background:var(--white);border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -168,7 +168,7 @@
   .settings-header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
   .btn-back{width:32px;height:32px;background:rgba(255,255,255,.15);border:none;border-radius:8px;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .settings-title{font-size:15px;font-weight:600;color:white}
-  .settings-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .settings-body{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px}
   .settings-body > *{flex-shrink:0}
   .settings-section{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:4px 0}
   .settings-card{background:white;border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.2';
+const APP_VERSION = '5.3';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2013,12 +2013,18 @@ function openDetail(id) {
   html += '<div class="card">';
   html += '<div class="card-head"><div class="card-head-left"><span>📋</span><span>Thông tin booking</span></div>';
   html += '<button class="btn-sm" onclick="copyText(\''+id+'\',\'confirm\')">📋 Copy</button></div>';
-  html += '<div style="padding:12px 14px;font-size:14px;white-space:pre-wrap;line-height:1.9;color:var(--text);max-height:300px;overflow-y:auto">'+(b.confirmVI||'—')+'</div>';
-  html += '<div style="padding:10px 14px 12px;border-top:.5px solid var(--gl);display:flex;flex-direction:column;gap:5px">';
+  html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
+  if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
+  if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
+  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+b.date+'</div>';
+  if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
+  if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
-  html += '</div></div>';
+  html += '</div>';
+  if (b.confirmVI) html += '<div style="padding:10px 14px 12px;border-top:.5px solid var(--gl);font-size:13px;white-space:pre-wrap;line-height:1.8;color:var(--text2);max-height:200px;overflow-y:auto">'+b.confirmVI+'</div>';
+  html += '</div>';
 
   // TRẠNG THÁI
   html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';

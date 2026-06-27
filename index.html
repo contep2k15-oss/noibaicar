@@ -539,7 +539,7 @@
         </div>
         <div class="settings-row">
           <div class="settings-label">Giá / điểm (VND)</div>
-          <input type="number" id="room-rate-input" placeholder="vd: 150000">
+          <input type="text" id="room-rate-input" placeholder="vd: 150.000" inputmode="numeric">
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.0';
+const APP_VERSION = '5.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1065,7 +1065,8 @@ async function syncPush(silent) {
         bookings: bookings,
         rooms: rooms,
         partners: partners,
-        customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}')
+        customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}'),
+        users: JSON.parse(localStorage.getItem('nbc_users') || '[]')
       }),
       redirect:'follow'
     });
@@ -1089,7 +1090,8 @@ async function syncPull(silent) {
     if (Array.isArray(data.rooms)) { rooms = data.rooms; localStorage.setItem('nbc_rooms', JSON.stringify(rooms)); }
     if (Array.isArray(data.partners)) { partners = data.partners; localStorage.setItem('nbc_partners', JSON.stringify(partners)); }
     if (data.customers && typeof data.customers === 'object') localStorage.setItem('nbc_customers', JSON.stringify(data.customers));
-    renderRoomSettings(); renderBookings(); renderPartnerSettings();
+    if (Array.isArray(data.users) && data.users.length) localStorage.setItem('nbc_users', JSON.stringify(data.users));
+    renderRoomSettings(); renderBookings(); renderPartnerSettings(); renderUserSettings();
     if (!silent) showToast('✓ Đã tải về (' + bookings.length + ' booking)');
   } catch(e){ if (!silent) showToast('❌ Lỗi kết nối: ' + e.message); }
 }
@@ -1149,6 +1151,7 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
     writeRooms(ss, data.rooms || []);
     writePartners(ss, data.partners || []);
     writeCustomers(ss, data.customers || {});
+    if (data.users && data.users.length) saveUsers(ss, data.users);
     return jsonOut({ ok: true, count: (data.bookings || []).length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
@@ -1195,14 +1198,28 @@ function loadApiKey(ss) {
 function saveUsers(ss, users) {
   var sh = ss.getSheetByName('NBC_USERS') || ss.insertSheet('NBC_USERS');
   sh.clearContents();
-  sh.getRange(1,1).setValue(JSON.stringify(users));
+  var headers = ['Username', 'Password', 'Features'];
+  var rows = [headers];
+  (users || []).forEach(function(u) {
+    rows.push([u.username||'', u.password||'', (u.features||[]).join(',')]);
+  });
+  sh.getRange(1, 1, rows.length, 3).setValues(rows);
+  var hr = sh.getRange(1, 1, 1, 3);
+  hr.setBackground('#1A5C38'); hr.setFontColor('#FFFFFF'); hr.setFontWeight('bold');
+  sh.setFrozenRows(1);
 }
 
 function loadUsers(ss) {
   var sh = ss.getSheetByName('NBC_USERS');
-  if (!sh || sh.getLastRow() < 1) return [];
-  var val = sh.getRange(1,1).getValue();
-  return val ? JSON.parse(val) : [];
+  if (!sh || sh.getLastRow() < 2) return [];
+  var rows = sh.getRange(2, 1, sh.getLastRow()-1, 3).getValues();
+  return rows.filter(function(r){ return r[0]; }).map(function(r) {
+    return {
+      username: r[0]||'',
+      password: r[1]||'',
+      features: r[2] ? r[2].split(',').filter(Boolean) : []
+    };
+  });
 }
 
 function saveData(ss, payload) {
@@ -1216,13 +1233,73 @@ function saveData(ss, payload) {
 }
 
 function loadData(ss) {
-  var sh = ss.getSheetByName('NBC_DATA');
-  if (!sh) return null;
-  var n = sh.getLastRow();
-  if (n < 1) return null;
-  var vals = sh.getRange(1, 1, n, 1).getValues();
-  var str = vals.map(function(r) { return r[0]; }).join('');
-  return str ? JSON.parse(str) : null;
+  var result = { bookings: [], rooms: [], partners: [], customers: {} };
+
+  // Đọc Bookings từ NBC_BOOKINGS
+  var shB = ss.getSheetByName('NBC_BOOKINGS');
+  if (shB && shB.getLastRow() > 1) {
+    var bRows = shB.getRange(2, 1, shB.getLastRow()-1, 17).getValues();
+    result.bookings = bRows.filter(function(r){ return r[0]; }).map(function(r) {
+      return {
+        id: r[0]||'', name: r[1]||'', phone: r[2]||'', date: r[3]||'',
+        route: r[4]||'', vehicle: r[5]||'', priceDriver: r[6]||'', priceVP: r[7]||'',
+        room: r[8]||'', points: r[9]||'',
+        custType: r[10]==='Doi tac'?'doitac':'le',
+        partnerName: r[11]||'', statusDrive: r[12]||'', statusPay: r[13]||'',
+        statusPoints: r[14]||'', note: r[15]||'', createdAt: r[16]||''
+      };
+    });
+  }
+
+  // Đọc Rooms từ NBC_ROOMS
+  var shR = ss.getSheetByName('NBC_ROOMS');
+  if (shR && shR.getLastRow() > 1) {
+    var rRows = shR.getRange(2, 1, shR.getLastRow()-1, 2).getValues();
+    result.rooms = rRows.filter(function(r){ return r[0]; }).map(function(r) {
+      return { name: r[0]||'', rate: parseFloat(r[1])||0 };
+    });
+  }
+
+  // Đọc Partners từ NBC_PARTNERS
+  var shP = ss.getSheetByName('NBC_PARTNERS');
+  if (shP && shP.getLastRow() > 1) {
+    var pRows = shP.getRange(2, 1, shP.getLastRow()-1, 8).getValues();
+    result.partners = pRows.filter(function(r){ return r[0]; }).map(function(r) {
+      return {
+        id: r[0]||'', name: r[1]||'', phone: r[2]||'', country: r[3]||'',
+        address: r[4]||'', email: r[5]||'', note: r[6]||'',
+        bookingIds: []
+      };
+    });
+  }
+
+  // Đọc Customers từ NBC_CUSTOMERS
+  var shC = ss.getSheetByName('NBC_CUSTOMERS');
+  if (shC && shC.getLastRow() > 1) {
+    var cRows = shC.getRange(2, 1, shC.getLastRow()-1, 3).getValues();
+    cRows.forEach(function(r) {
+      if (!r[0]) return;
+      result.customers[r[0]] = {
+        tags: r[1] ? r[1].split(', ').filter(Boolean) : [],
+        note: r[2]||''
+      };
+    });
+  }
+
+  // Đọc Users từ NBC_USERS
+  result.users = loadUsers(ss);
+
+  // Fallback: nếu tất cả sheet riêng đều rỗng, đọc NBC_DATA
+  if (!result.bookings.length && !result.rooms.length && !result.partners.length) {
+    var shD = ss.getSheetByName('NBC_DATA');
+    if (shD && shD.getLastRow() > 0) {
+      var vals = shD.getRange(1, 1, shD.getLastRow(), 1).getValues();
+      var str = vals.map(function(r) { return r[0]; }).join('');
+      if (str) return JSON.parse(str);
+    }
+  }
+
+  return result;
 }
 
 function styleHeader(sh, numCols) {
@@ -1327,7 +1404,8 @@ function editRoom(i) {
 function cancelAddRoom() { document.getElementById('add-room-form').style.display = 'none'; }
 function saveRoom() {
   const name = document.getElementById('room-name-input').value.trim();
-  const rate = parseFloat(document.getElementById('room-rate-input').value);
+  const rateRaw = document.getElementById('room-rate-input').value.replace(/[.\s]/g,'').replace(',','.');
+  const rate = parseFloat(rateRaw);
   if (!name || isNaN(rate)){ showToast('⚠️ Vui lòng nhập đủ thông tin'); return; }
   if (editingRoomIdx !== null) {
     rooms[editingRoomIdx] = {name, rate};

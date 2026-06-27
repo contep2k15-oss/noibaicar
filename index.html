@@ -580,6 +580,33 @@
       <button class="btn-save" style="background:var(--blue)" onclick="syncPull()">⬇️ Tải về</button>
     </div>
     <button id="btn-apps-script" class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã Apps Script & hướng dẫn</button>
+    <div class="settings-card" style="margin-top:10px">
+      <div class="settings-row">
+        <div class="settings-label">Cảnh báo Telegram trước</div>
+        <select id="tele-alert-hours" onchange="saveTeleConfig()" style="font-size:13px;padding:5px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);background:var(--bg);color:var(--text)">
+          <option value="1">1 giờ</option>
+          <option value="2">2 giờ</option>
+          <option value="3" selected>3 giờ</option>
+          <option value="6">6 giờ</option>
+          <option value="12">12 giờ</option>
+          <option value="24">24 giờ</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">Thông báo booking mới</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="tele-notify-new" onchange="saveTeleConfig()" checked>
+          <span>Bật</span>
+        </label>
+      </div>
+      <div class="settings-row" style="border-bottom:none">
+        <div class="settings-label">Cảnh báo chưa điều xe</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="tele-notify-unassigned" onchange="saveTeleConfig()" checked>
+          <span>Bật</span>
+        </label>
+      </div>
+    </div>
       </div>
     </div>
 
@@ -663,7 +690,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '7.0';
+const APP_VERSION = '7.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -986,6 +1013,7 @@ function toggleAcc(id){
   var head = body.previousElementSibling;
   if (head) head.classList.toggle('open', open);
   if (open && id === 'partners') renderPartnerSettings();
+  if (open && id === 'sync') loadTeleConfig();
 }
 function saveSettings() {
   const key = document.getElementById('api-key-input').value.trim();
@@ -1049,6 +1077,27 @@ function saveSheetUrl() {
 }
 // ===== AUTO SYNC =====
 let autoSyncTimer = null;
+function saveTeleConfig() {
+  const hours = (document.getElementById('tele-alert-hours')||{}).value || '3';
+  const notifyNew = document.getElementById('tele-notify-new') ? document.getElementById('tele-notify-new').checked : true;
+  const notifyUnassigned = document.getElementById('tele-notify-unassigned') ? document.getElementById('tele-notify-unassigned').checked : true;
+  const cfg = { alertHours: parseInt(hours), notifyNew, notifyUnassigned };
+  localStorage.setItem('nbc_tele_config', JSON.stringify(cfg));
+  // Push config lên Sheets để Apps Script đọc
+  scheduleAutoSync();
+  showToast('✓ Đã lưu cài đặt Telegram');
+}
+
+function loadTeleConfig() {
+  const cfg = JSON.parse(localStorage.getItem('nbc_tele_config') || '{}');
+  const h = document.getElementById('tele-alert-hours');
+  if (h && cfg.alertHours) h.value = cfg.alertHours;
+  const nn = document.getElementById('tele-notify-new');
+  if (nn) nn.checked = cfg.notifyNew !== false;
+  const nu = document.getElementById('tele-notify-unassigned');
+  if (nu) nu.checked = cfg.notifyUnassigned !== false;
+}
+
 function scheduleAutoSync() {
   clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(function() { syncPush(true); }, 4000);
@@ -1066,7 +1115,8 @@ async function syncPush(silent) {
         rooms: rooms,
         partners: partners,
         customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}'),
-        users: JSON.parse(localStorage.getItem('nbc_users') || '[]')
+        users: JSON.parse(localStorage.getItem('nbc_users') || '[]'),
+        teleConfig: JSON.parse(localStorage.getItem('nbc_tele_config') || '{}')
       }),
       redirect:'follow'
     });
@@ -1162,19 +1212,21 @@ function formatMoney(val) {
 }
 
 function notifyNewBooking(booking) {
-  var msg = '🔔 *Booking mới — ' + (booking.id||'') + '*\n'
-    + '👤 ' + (booking.name||'Khách') + (booking.phone ? ' • ' + booking.phone : '') + '\n'
-    + '📅 ' + (booking.date||'—') + '\n'
-    + '📍 ' + (booking.route||'—') + '\n'
-    + '🚗 ' + (booking.vehicle||'—') + '\n'
-    + '💰 VP: *' + formatMoney(booking.priceVP) + '*'
-    + (booking.custType==='doitac' ? '\n🤝 Đối tác: ' + (booking.partnerName||'') : '');
+  var nl = '\n';
+  var msg = '[NBC] Đặt xe mới: ' + (booking.id||'') + nl
+    + 'Khách: ' + (booking.name||'Khách') + (booking.phone ? ' - ' + booking.phone : '') + nl
+    + 'Ngày đón: ' + (booking.date||'--') + nl
+    + 'Lộ trình: ' + (booking.route||'--') + nl
+    + 'Loại xe: ' + (booking.vehicle||'--') + nl
+    + 'Giá VP: ' + formatMoney(booking.priceVP)
+    + (booking.custType==='doitac' ? nl + 'Đối tác: ' + (booking.partnerName||'') : '');
   sendTelegram(msg);
 }
 
 function notifyUnassigned(bookings) {
   var now = new Date();
   var alerts = [];
+  var nl = '\n';
   (bookings||[]).forEach(function(b) {
     if (b.statusDrive !== 'processing' || !b.date) return;
     try {
@@ -1182,13 +1234,51 @@ function notifyUnassigned(bookings) {
       if (parts.length < 3) return;
       var bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
       var diffHours = (bd - now) / (1000*60*60);
-      if (diffHours >= 0 && diffHours <= 3) {
-        alerts.push('⚠️ *' + (b.id||'') + '* — ' + (b.name||'') + '\n📍 ' + (b.route||'—') + ' • ' + (b.date||''));
+      var alertHours = alertHoursLimit || 3;
+      if (diffHours >= 0 && diffHours <= alertHours) {
+        alerts.push('[Chưa điều] ' + (b.id||'') + ' - ' + (b.name||'') + nl + (b.route||'--') + ' - ' + (b.date||''));
       }
     } catch(e) {}
   });
   if (alerts.length) {
-    sendTelegram('🚨 *Cảnh báo chưa điều xe*\n\n' + alerts.join('\n\n'));
+    sendTelegram('Cảnh báo: Chưa điều xe trong 3 giờ tới' + nl + nl + alerts.join(nl + nl));
+  }
+}
+function checkAndNotify() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var data = loadData(ss);
+    if (!data || !data.bookings) return;
+    var teleConfig = loadTeleConfigFromSheet(ss);
+    var alertHoursLimit = teleConfig.alertHours || 3;
+    if (teleConfig.notifyUnassigned === false) return;
+    var now = new Date();
+    var alerts = [];
+    var nl = '\n';
+    data.bookings.forEach(function(b) {
+      if (b.statusDrive !== 'processing' || !b.date) return;
+      try {
+        var dateStr = b.date;
+        // Handle ISO format
+        if (dateStr.indexOf('T') > 0) {
+          var d = new Date(dateStr);
+          dateStr = (d.getDate()<10?'0':'')+d.getDate()+'/'+(d.getMonth()<9?'0':''+(d.getMonth()+1))+'/'+d.getFullYear();
+        }
+        var parts = dateStr.split('/');
+        if (parts.length < 3) return;
+        var bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+        var diffHours = (bd - now) / (1000*60*60);
+        if (diffHours >= 0 && diffHours <= 3) {
+          alerts.push('[Chưa điều] ' + (b.id||'') + ' - ' + (b.name||'') + nl
+            + (b.route||'--') + ' - ' + dateStr);
+        }
+      } catch(e) {}
+    });
+    if (alerts.length) {
+      sendTelegram('Cảnh báo: Chưa điều xe trong 3 giờ tới' + nl + nl + alerts.join(nl + nl));
+    }
+  } catch(err) {
+    sendTelegram('[NBC] Lỗi kiểm tra tự động: ' + String(err));
   }
 }
 
@@ -1215,6 +1305,7 @@ function doPost(e) {
     writePartners(ss, data.partners || []);
     writeCustomers(ss, data.customers || {});
     if (data.users && data.users.length) saveUsers(ss, data.users);
+    if (data.teleConfig) saveTeleConfigToSheet(ss, data.teleConfig);
     writeBaoCao(ss, data.bookings || [], data.rooms || [], data.partners || []);
     // Thông báo Telegram cho booking mới nhất
     var newBookings = data.bookings || [];
@@ -1263,6 +1354,18 @@ function doGet(e) {
 function saveApiKey(ss, key) {
   var sh = ss.getSheetByName('NBC_CONFIG') || ss.insertSheet('NBC_CONFIG');
   sh.getRange(1,1).setValue(key);
+}
+
+function saveTeleConfigToSheet(ss, cfg) {
+  var sh = ss.getSheetByName('NBC_CONFIG') || ss.insertSheet('NBC_CONFIG');
+  sh.getRange(2,1).setValue(JSON.stringify(cfg||{}));
+}
+
+function loadTeleConfigFromSheet(ss) {
+  var sh = ss.getSheetByName('NBC_CONFIG');
+  if (!sh || sh.getLastRow() < 2) return {};
+  var val = sh.getRange(2,1).getValue();
+  try { return val ? JSON.parse(val) : {}; } catch(e) { return {}; }
 }
 
 function loadApiKey(ss) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nbc-v5.6';
+const CACHE_NAME = 'nbc-v5.7';
 
 const ASSETS = [
   './',

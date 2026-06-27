@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '6.6';
+const APP_VERSION = '6.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1468,7 +1468,7 @@ function writeBaoCao(ss, bookings, rooms, partners) {
     if (!partnerStats[key]) {
       var name = b.partnerName || key;
       for (var i=0; i<partners.length; i++) { if (partners[i].id===key) { name=partners[i].name; break; } }
-      partnerStats[key] = { name:name, count:0, vp:0, cost:0, unpaid:0 };
+      partnerStats[key] = { name:name, count:0, vp:0, cost:0, unpaid:0, diem:0, deductions:0 };
     }
     partnerStats[key].count++;
     partnerStats[key].vp += parseM(b.priceVP);
@@ -3187,12 +3187,13 @@ function renderBaoCao() {
     if (!key || key === 'unknown') return;
     if (!partnerStats[key]) {
       const p = partners.find(function(x){ return x.id === key || x.name === key; });
-      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0 };
+      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0, deductions:0 };
     }
     partnerStats[key].count++;
     partnerStats[key].vp += parseMoneyNum(b.priceVP);
     partnerStats[key].cost += parseMoneyNum(b.priceDriver);
     partnerStats[key].diem += calcPointsMoney(b);
+    partnerStats[key].deductions += calcDeductions(b);
     if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseMoneyNum(b.priceVP);
   });
 
@@ -3204,9 +3205,9 @@ function renderBaoCao() {
     }) || partnerSel;
     const s = partnerStats[selKey];
     if (s) {
-      const net = s.vp - s.cost + (s.diem||0);
+      const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
       html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Tiền điểm '+fmtVND(s.diem):'')+'</div></div>';
+      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Tiền điểm '+fmtVND(s.diem):'')+(s.deductions?' &nbsp;•&nbsp; Khấu trừ −'+fmtVND(s.deductions):'')+'</div></div>';
       html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
       html += '<div class="bc-room-detail" style="color:var(--gm)">Lãi gộp '+fmtVND(net)+'</div>';
       if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';

@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '6.3';
+const APP_VERSION = '6.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2203,25 +2203,43 @@ function openDetail(id) {
 
   // Danh sách phí phát sinh
   if (extras.length) {
-    html += '<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">';
-    extras.forEach(function(e, i) {
-      html += '<div style="display:flex;align-items:center;gap:8px;font-size:13px">';
-      html += '<span style="flex:1;color:var(--text2)">− '+(e.note||'Phí phát sinh')+': <b style="color:var(--red)">'+Number(e.amount||0).toLocaleString('vi-VN')+' VND</b></span>';
-      html += '<button class="btn-sm" style="background:var(--red);color:white;flex-shrink:0" onclick="removeExtra(''+id+'','+i+')">✕</button>';
-      html += '</div>';
+    const extrasDiv = document.createElement('div');
+    extrasDiv.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-top:4px';
+    extras.forEach(function(e, eIdx) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px';
+      const info = document.createElement('span');
+      info.style.cssText = 'flex:1;color:var(--text2)';
+      info.innerHTML = '− '+(e.note||'Phí phát sinh')+': <b style="color:var(--red)">'+Number(e.amount||0).toLocaleString('vi-VN')+' VND</b>';
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-sm';
+      delBtn.style.cssText = 'background:var(--red);color:white;flex-shrink:0';
+      delBtn.textContent = '✕';
+      delBtn.onclick = (function(bid, idx){ return function(){ removeExtra(bid, idx); }; })(id, eIdx);
+      row.appendChild(info); row.appendChild(delBtn);
+      extrasDiv.appendChild(row);
     });
-    html += '</div>';
+    html += extrasDiv.outerHTML;
   }
 
   // Form thêm phí phát sinh
-  html += '<div style="display:flex;gap:6px;margin-top:4px">';
-  html += '<input type="text" id="extra-note-'+id+'" placeholder="Chú thích (VD: Phí cầu đường)" style="flex:2;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit">';
-  html += '<input type="number" id="extra-amt-'+id+'" placeholder="Số tiền" style="flex:1;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit">';
-  html += '<button class="btn-sm" style="background:var(--blue);color:white;flex-shrink:0" onclick="addExtra(''+id+'')">+ Thêm</button>';
-  html += '</div>';
+  const formDiv = document.createElement('div');
+  formDiv.style.cssText = 'display:flex;gap:6px;margin-top:4px';
+  const noteInp = document.createElement('input');
+  noteInp.type = 'text'; noteInp.id = 'extra-note-'+id;
+  noteInp.placeholder = 'Chú thích (VD: Phí cầu đường)';
+  noteInp.style.cssText = 'flex:2;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
+  const amtInp = document.createElement('input');
+  amtInp.type = 'number'; amtInp.id = 'extra-amt-'+id;
+  amtInp.placeholder = 'Số tiền';
+  amtInp.style.cssText = 'flex:1;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn-sm'; addBtn.style.cssText = 'background:var(--blue);color:white;flex-shrink:0';
+  addBtn.textContent = '+ Thêm';
+  addBtn.onclick = (function(bid){ return function(){ addExtra(bid); }; })(id);
+  formDiv.appendChild(noteInp); formDiv.appendChild(amtInp); formDiv.appendChild(addBtn);
+  html += formDiv.outerHTML;
 
-  if (totalDeduct > 0) {
-    html += '<div style="font-size:13px;font-weight:600;color:var(--red);margin-top:4px">Tổng khấu trừ: −'+totalDeduct.toLocaleString('vi-VN')+' VND</div>';
   }
   html += '</div></div>';
 

@@ -538,8 +538,8 @@
           <input type="text" id="room-name-input" placeholder="vd: Hero">
         </div>
         <div class="settings-row">
-          <div class="settings-label">Giá / điểm (k)</div>
-          <input type="number" id="room-rate-input" placeholder="vd: 150">
+          <div class="settings-label">Giá / điểm (VND)</div>
+          <input type="number" id="room-rate-input" placeholder="vd: 150000">
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1254,7 +1254,7 @@ function writeBookings(ss, bookings) {
 function writeRooms(ss, rooms) {
   var sh = ss.getSheetByName('NBC_ROOMS') || ss.insertSheet('NBC_ROOMS');
   sh.clearContents();
-  var headers = ['Room', 'Don gia (k/diem)'];
+  var headers = ['Room', 'Don gia (VND/diem)'];
   var rows = [headers];
   (rooms || []).forEach(function(r) {
     rows.push([r.name||'', r.rate||0]);
@@ -1304,7 +1304,7 @@ function renderRoomSettings() {
     <div class="room-item">
       <div class="room-info">
         <div class="room-name">${r.name}</div>
-        <div class="room-rate">${r.rate}k / điểm</div>
+        <div class="room-rate">${Number(r.rate).toLocaleString('vi-VN')} VND / điểm</div>
       </div>
       <div class="room-actions">
         <button class="btn-sm" onclick="editRoom(${i})">Sửa</button>
@@ -1835,7 +1835,7 @@ function renderBookings() {
   let html = '';
   filtered.forEach(function(b) {
     const selRoom = rooms.find(function(r){ return r.name === b.room; });
-    const pointsAmt = selRoom && b.points ? (parseFloat(b.points) * selRoom.rate * 1000).toLocaleString('vi-VN') + ' VND' : '';
+    const pointsAmt = selRoom && b.points ? (parseFloat(b.points) * selRoom.rate).toLocaleString('vi-VN') + ' VND' : '';
     html += '<div class="booking-card">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start" onclick="openDetail(\''+b.id+'\')">';
     html += '<div class="booking-id">'+b.id+'</div>';
@@ -1861,7 +1861,7 @@ function showPointsPopup(id) {
   if (!b) return;
   let roomOptions = '<option value="">-- Chọn Room --</option>';
   rooms.forEach(function(r) {
-    roomOptions += '<option value="'+r.name+'"'+(b.room===r.name?' selected':'')+'>'+r.name+' ('+r.rate+'k/điểm)</option>';
+    roomOptions += '<option value="'+r.name+'"'+(b.room===r.name?' selected':'')+'>'+r.name+' ('+Number(r.rate).toLocaleString('vi-VN')+' VND/điểm)</option>';
   });
   const popup = document.createElement('div');
   popup.id = 'points-popup';
@@ -1890,8 +1890,8 @@ function calcPointsPopup() {
   const selRoom = rooms.find(function(r){ return r.name === roomEl.value; });
   const pts = parseFloat(pointsEl.value);
   if (selRoom && pts && !isNaN(pts)) {
-    const amt = pts * selRoom.rate * 1000;
-    resultEl.innerHTML = '💰 '+pts+' điểm × '+selRoom.rate+'k = <b>'+amt.toLocaleString('vi-VN')+' VND</b>';
+    const amt = pts * selRoom.rate;
+    resultEl.innerHTML = '💰 '+pts+' điểm × '+Number(selRoom.rate).toLocaleString('vi-VN')+' VND = <b>'+amt.toLocaleString('vi-VN')+' VND</b>';
   } else {
     resultEl.textContent = 'Chọn Room và nhập điểm để tính tiền';
   }
@@ -1926,7 +1926,7 @@ function openDetail(id) {
   if (!b) return;
   document.getElementById('detail-title').textContent = b.id;
   const selRoom = rooms.find(function(r){ return r.name === b.room; });
-  const pointsAmt = selRoom && b.points ? parseFloat(b.points) * selRoom.rate * 1000 : 0;
+  const pointsAmt = selRoom && b.points ? parseFloat(b.points) * selRoom.rate : 0;
   const pointsAmtFmt = pointsAmt ? pointsAmt.toLocaleString('vi-VN') + ' VND' : '—';
 
   let html = '';
@@ -2783,7 +2783,7 @@ function renderBaoCao() {
     const s = roomStats[roomSel];
     if (s) {
       html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🏆 '+roomSel+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; '+s.totalPts+' điểm &nbsp;•&nbsp; '+s.rate+'k/điểm</div></div>';
+      html += '<div><div class="bc-room-name">🏆 '+roomSel+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; '+s.totalPts+' điểm &nbsp;•&nbsp; '+Number(s.rate).toLocaleString('vi-VN')+' VND/điểm</div></div>';
       html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.totalMoney)+'</div>';
       html += '<div class="bc-room-detail" style="color:var(--gm)">✅ '+fmtVND(s.collected)+' đã thu</div>';
       if (s.uncollected) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.uncollected)+' chưa thu</div>';
@@ -2845,7 +2845,7 @@ function exportExcel() {
   const headers = ['Mã booking','Tên khách','SĐT','Ngày đón','Lộ trình','Loại xe','Giá điều (VND)','Giá VP (VND)','Room','Điểm','Tiền điểm (VND)','TT điều xe','TT thanh toán','TT điểm','Ghi chú'];
   const rows = bookings.map(function(b) {
     const selRoom = rooms.find(function(r){ return r.name === b.room; });
-    const pointsAmt = selRoom && b.points ? parseFloat(b.points) * selRoom.rate * 1000 : '';
+    const pointsAmt = selRoom && b.points ? parseFloat(b.points) * selRoom.rate : '';
     return [
       b.id, b.name, b.phone, b.date, b.route, b.vehicle,
       parseMoneyToNum(b.priceDriver),

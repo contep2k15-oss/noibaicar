@@ -62,7 +62,7 @@
   #booking-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 
   /* CARDS */
-  .card{background:var(--white);border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
+  .card{background:var(--white);border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden;margin-bottom:10px}
   .card-head{background:var(--gl);padding:8px 14px;border-bottom:.5px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
   .card-head-left{display:flex;align-items:center;gap:7px}
   .card-head span{font-size:11px;font-weight:600;color:var(--gt);letter-spacing:.03em;text-transform:uppercase}
@@ -684,7 +684,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '8.1';
+const APP_VERSION = '8.2';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2294,7 +2294,7 @@ function openDetail(id) {
   html += '</div>';
 
   // TRẠNG THÁI
-  html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';
+  html += '<div class="card" style="margin-bottom:10px"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';
   html += '<div class="status-row">';
   html += '<button class="status-btn '+(b.statusDrive==='processing'?'active-processing':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'processing\')">🟡 Đang xử lý</button>';
   html += '<button class="status-btn '+(b.statusDrive==='done'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'done\')">✅ Đã điều</button>';

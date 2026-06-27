@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '7.5';
+const APP_VERSION = '7.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2006,7 +2006,7 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     createdAt: new Date().toISOString(),
     name: meta.name || 'Khách',
     phone: meta.phone || '',
-    date: meta.date || '',
+    date: fmtDate(meta.date || ''),
     route: meta.route || '',
     vehicle: meta.vehicle || '',
     priceDriver: meta.priceDriver || '',
@@ -2118,8 +2118,8 @@ function renderBookings() {
     if (search && !b.phone.includes(search)) return false;
     if (currentFilter === 'chuadieu') return b.statusDrive !== 'done';
     if (currentFilter === 'incomplete') return b.statusDrive !== 'done' || b.statusPay !== 'paid';
-    if (currentFilter === 'today') return b.date === todayStr;
-    if (currentFilter === 'month') return b.date.endsWith(monthStr);
+    if (currentFilter === 'today') return fmtDate(b.date) === todayStr;
+    if (currentFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
     return true;
   });
   const el = document.getElementById('booking-list');
@@ -2138,7 +2138,7 @@ function renderBookings() {
     html += '<div class="booking-name" onclick="openDetail(\''+b.id+'\')">'+b.name+(b.phone?' • '+b.phone:'')+'</div>';
     html += '<div class="booking-route" onclick="openDetail(\''+b.id+'\')">📍 '+(b.route||'—')+'</div>';
     html += '<div class="booking-footer">';
-    html += '<div class="booking-date" onclick="openDetail(\''+b.id+'\')">📅 '+(b.date||'—')+'</div>';
+    html += '<div class="booking-date" onclick="openDetail(\''+b.id+'\')">📅 '+fmtDate(b.date||'')+'</div>';
     html += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">';
     html += '<button class="btn-sm" style="font-size:11px;padding:3px 7px;color:var(--gd);border-color:var(--gb)" onclick="showPointsPopup(\''+b.id+'\')">🏆'+(b.points?' '+b.points+'đ':' Điểm')+'</button>';
     html += '<span class="badge '+(b.statusDrive==='done'?'done':'processing')+'" onclick="openDetail(\''+b.id+'\')">'+(b.statusDrive==='done'?'✅ Đã điều':'🚗 Chưa điều')+'</span>';
@@ -2233,7 +2233,7 @@ function openDetail(id) {
   html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
   if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
   if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
-  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+b.date+'</div>';
+  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date)+'</div>';
   if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
   if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
@@ -2970,11 +2970,11 @@ function filterBookingsForBC() {
 
   return bookings.filter(function(b) {
     if (bcFilter === 'all') return true;
-    if (bcFilter === 'today') return b.date === todayStr;
-    if (bcFilter === 'month') return b.date.endsWith(monthStr);
+    if (bcFilter === 'today') return fmtDate(b.date) === todayStr;
+    if (bcFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
     if (bcFilter === 'week') {
       if (!b.date) return false;
-      const parts = b.date.split('/');
+      const parts = fmtDate(b.date).split('/');
       if (parts.length < 3) return false;
       const bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
       const diff = (now - bd) / (1000*60*60*24);
@@ -2982,6 +2982,19 @@ function filterBookingsForBC() {
     }
     return true;
   });
+}
+
+function fmtDate(val) {
+  if (!val) return '—';
+  if (typeof val === 'string' && (val.includes('T') || (val.includes('-') && val.indexOf('-') < 4))) {
+    const d = new Date(val);
+    if (!isNaN(d)) {
+      return String(d.getDate()).padStart(2,'0') + '/' +
+             String(d.getMonth()+1).padStart(2,'0') + '/' +
+             d.getFullYear();
+    }
+  }
+  return val;
 }
 
 function parseMoneyNum(val) {

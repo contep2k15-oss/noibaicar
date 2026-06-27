@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.8';
+const APP_VERSION = '5.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2864,7 +2864,7 @@ function updateRoomDropdown() {
   rooms.forEach(function(r) {
     const opt = document.createElement('option');
     opt.value = r.name;
-    opt.textContent = r.name + ' (' + r.rate + 'k/điểm)';
+    opt.textContent = r.name + ' (' + Number(r.rate).toLocaleString('vi-VN') + ' VND/điểm)';
     if (r.name === cur) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -2969,7 +2969,7 @@ function renderBaoCao() {
     roomStats[b.room].count++;
     if (b.points && r) {
       const pts = parseFloat(b.points);
-      const money = pts * r.rate * 1000;
+      const money = pts * r.rate;
       roomStats[b.room].totalPts += pts;
       roomStats[b.room].totalMoney += money;
       if (b.statusPoints==='collected') roomStats[b.room].collected += money;

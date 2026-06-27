@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.9';
+const APP_VERSION = '6.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1477,7 +1477,7 @@ function writeBaoCao(ss, bookings, rooms, partners) {
   });
   Object.keys(partnerStats).forEach(function(key) {
     var s = partnerStats[key];
-    rows.push([s.name, s.count, s.vp, s.cost, s.vp-s.cost, s.unpaid, '']);
+    rows.push([s.name, s.count, s.vp, s.cost, s.vp-s.cost+s.diem, s.unpaid, '']);
   });
   if (!Object.keys(partnerStats).length) rows.push(['Khong co du lieu', '', '', '', '', '', '']);
 
@@ -1927,7 +1927,7 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     createdAt: new Date().toISOString(),
     name: meta.name || 'Khách',
     phone: meta.phone || '',
-    date: meta.date || '',
+    date: fmtDate(meta.date || ''),
     route: meta.route || '',
     vehicle: meta.vehicle || '',
     priceDriver: meta.priceDriver || '',
@@ -2154,7 +2154,7 @@ function openDetail(id) {
   html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
   if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
   if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
-  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+b.date+'</div>';
+  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date)+'</div>';
   if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
   if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
@@ -2890,12 +2890,13 @@ function filterBookingsForBC() {
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
 
   return bookings.filter(function(b) {
+    const dateStr = fmtDate(b.date||'');
     if (bcFilter === 'all') return true;
-    if (bcFilter === 'today') return b.date === todayStr;
-    if (bcFilter === 'month') return b.date.endsWith(monthStr);
+    if (bcFilter === 'today') return dateStr === todayStr;
+    if (bcFilter === 'month') return dateStr.endsWith(monthStr);
     if (bcFilter === 'week') {
-      if (!b.date) return false;
-      const parts = b.date.split('/');
+      if (!dateStr || dateStr === '—') return false;
+      const parts = dateStr.split('/');
       if (parts.length < 3) return false;
       const bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
       const diff = (now - bd) / (1000*60*60*24);
@@ -2920,6 +2921,19 @@ function parseMoneyNum(val) {
 function fmtVND(num) {
   if (!num) return '0 VND';
   return num.toLocaleString('vi-VN') + ' VND';
+}
+
+function fmtDate(val) {
+  if (!val) return '—';
+  if (val.includes('T') || (val.includes('-') && val.indexOf('-') < 4)) {
+    const d = new Date(val);
+    if (!isNaN(d)) {
+      return String(d.getDate()).padStart(2,'0') + '/' +
+             String(d.getMonth()+1).padStart(2,'0') + '/' +
+             d.getFullYear();
+    }
+  }
+  return val;
 }
 
 function calcPointsMoney(b) {
@@ -3028,11 +3042,12 @@ function renderBaoCao() {
     if (!key || key === 'unknown') return;
     if (!partnerStats[key]) {
       const p = partners.find(function(x){ return x.id === key || x.name === key; });
-      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0 };
+      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0 };
     }
     partnerStats[key].count++;
     partnerStats[key].vp += parseMoneyNum(b.priceVP);
     partnerStats[key].cost += parseMoneyNum(b.priceDriver);
+    partnerStats[key].diem += calcPointsMoney(b);
     if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseMoneyNum(b.priceVP);
   });
 
@@ -3044,9 +3059,9 @@ function renderBaoCao() {
     }) || partnerSel;
     const s = partnerStats[selKey];
     if (s) {
-      const net = s.vp - s.cost;
+      const net = s.vp - s.cost + (s.diem||0);
       html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+'</div></div>';
+      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Tiền điểm '+fmtVND(s.diem):'')+'</div></div>';
       html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
       html += '<div class="bc-room-detail" style="color:var(--gm)">Lãi gộp '+fmtVND(net)+'</div>';
       if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';

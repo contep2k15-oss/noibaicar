@@ -684,7 +684,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '8.0';
+const APP_VERSION = '8.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1391,7 +1391,7 @@ function writeBookings(ss, bookings) {
       b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'',
       (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'',
       b.statusDrive||'', b.statusPay||'', b.statusPoints||'',
-      b.note||'', b.createdAt||''
+      b.note||'', b.createdAt||'', b.pickupTime||''
     ]);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
@@ -1848,7 +1848,7 @@ TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM — giờ đón (24h), để trống nếu không có","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
@@ -2050,6 +2050,7 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     name: meta.name || 'Khách',
     phone: meta.phone || '',
     date: fmtDate(meta.date || ''),
+    pickupTime: meta.pickupTime || '',
     route: meta.route || '',
     vehicle: meta.vehicle || '',
     priceDriver: meta.priceDriver || '',
@@ -2061,7 +2062,8 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     statusDrive: 'processing', statusPay: 'unpaid', statusPoints: 'unpending',
     room: '', points: '', pointsAmount: 0,
     custType: 'le', partnerId: '', partnerName: '', note: '',
-    extras: [], hasVAT: false
+    extras: [], hasVAT: false,
+    pickupTime: ''
   };
   const isDoiTac = document.getElementById('cb-doi-tac-'+id) && document.getElementById('cb-doi-tac-'+id).checked;
   if (isDoiTac) {
@@ -2278,8 +2280,12 @@ function openDetail(id) {
   if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
   if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
   if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date)+'</div>';
+  html += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)">';
+  html += '⏰ Giờ đón: <input type="text" id="pickup-time-'+id+'" value="'+(b.pickupTime||'')+'" placeholder="VD: 06:00" style="width:80px;padding:4px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit" onchange="savePickupTime(\''+id+'\')">';
+  html += '</div>';
   if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
   if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
+  if (b.pickupTime) html += '<div style="font-size:13px;color:var(--text2)">⏰ Giờ đón: <b>'+b.pickupTime+'</b></div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
@@ -2521,6 +2527,14 @@ function showMsgPopup(id, type) {
 function closeDetail() {
   document.getElementById('detail-overlay').classList.remove('active');
   renderBookings();
+}
+
+function savePickupTime(id) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  b.pickupTime = (document.getElementById('pickup-time-'+id)||{}).value||'';
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
 }
 
 function toggleVAT(id) {

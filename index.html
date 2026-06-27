@@ -2440,56 +2440,72 @@ function renderPartnerSettings() {
   });
 }
 
-function showAddPartnerSettings() {
+function buildPartnerPopup(title, vals, onSave) {
   const existing = document.getElementById('partner-settings-popup');
   if (existing) existing.remove();
-  const popup = document.createElement('div');
-  popup.id = 'partner-settings-popup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto">'
-    +'<div style="font-size:14px;font-weight:600;color:var(--gt)">🤝 Thêm đối tác</div>'
-    +'<div class="field"><label>Tên đối tác *</label><input type="text" id="ps-name" placeholder="vd: Booking Agent India"></div>'
-    +'<div class="field"><label>SĐT / Zalo</label><input type="text" id="ps-phone" placeholder="vd: +91 78372 32383" oninput="autoDetectCountry('ps-phone','ps-country')"></div>'
-    +'<div class="field"><label>Quốc gia</label><div style="display:flex;gap:6px">'
-    +'<input type="text" id="ps-country" placeholder="Tự nhận diện hoặc nhập tay" style="flex:1">'
-    +'<button class="btn-sm" onclick="autoDetectCountry('ps-phone','ps-country')" style="flex-shrink:0">🔍</button>'
-    +'</div></div>'
-    +'<div class="field"><label>Địa chỉ</label><input type="text" id="ps-address" placeholder="vd: 123 MG Road, Mumbai, India"></div>'
-    +'<div class="field"><label>Email</label><input type="text" id="ps-email" placeholder="vd: agent@booking.in"></div>'
-    +'<div class="field"><label>Ghi chú</label><input type="text" id="ps-note" placeholder="vd: Thanh toán cuối tháng"></div>'
-    +'<div style="display:flex;gap:8px">'
-    +'<button class="btn-save" onclick="savePartnerSettings()">💾 Lưu đối tác</button>'
-    +'<button class="btn-save" style="background:var(--text3)" onclick="document.getElementById('partner-settings-popup').remove()">Huỷ</button>'
-    +'</div></div>';
-  document.body.appendChild(popup);
-  popup.addEventListener('click', function(e){ if(e.target===popup) popup.remove(); });
+  const overlay = document.createElement('div');
+  overlay.id = 'partner-settings-popup';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto';
+
+  const ttl = document.createElement('div');
+  ttl.style.cssText = 'font-size:14px;font-weight:600;color:var(--gt)';
+  ttl.textContent = title;
+  sheet.appendChild(ttl);
+
+  function addField(label, id, placeholder, val) {
+    const wrap = document.createElement('div'); wrap.className = 'field';
+    const lbl = document.createElement('label'); lbl.textContent = label;
+    const inp = document.createElement('input'); inp.type = 'text'; inp.id = id;
+    inp.placeholder = placeholder || ''; if (val) inp.value = val;
+    wrap.appendChild(lbl); wrap.appendChild(inp); sheet.appendChild(wrap);
+    return inp;
+  }
+
+  addField('Tên đối tác *', 'ps-name', 'vd: Booking Agent India', vals.name);
+  const phoneInp = addField('SĐT / Zalo', 'ps-phone', 'vd: +91 78372 32383', vals.phone);
+  phoneInp.addEventListener('input', function(){ autoDetectCountry('ps-phone','ps-country'); });
+
+  // Country row với nút detect
+  const cwrap = document.createElement('div'); cwrap.className = 'field';
+  const clbl = document.createElement('label'); clbl.textContent = 'Quốc gia';
+  const crow = document.createElement('div'); crow.style.cssText = 'display:flex;gap:6px';
+  const cinp = document.createElement('input'); cinp.type = 'text'; cinp.id = 'ps-country';
+  cinp.placeholder = 'Tự nhận diện hoặc nhập tay'; cinp.style.flex = '1';
+  if (vals.country) cinp.value = vals.country;
+  const cBtn = document.createElement('button'); cBtn.className = 'btn-sm'; cBtn.textContent = '🔍';
+  cBtn.style.flexShrink = '0';
+  cBtn.onclick = function(){ autoDetectCountry('ps-phone','ps-country'); };
+  crow.appendChild(cinp); crow.appendChild(cBtn);
+  cwrap.appendChild(clbl); cwrap.appendChild(crow); sheet.appendChild(cwrap);
+
+  addField('Địa chỉ', 'ps-address', 'vd: 123 MG Road, Mumbai, India', vals.address);
+  addField('Email', 'ps-email', 'vd: agent@booking.in', vals.email);
+  addField('Ghi chú', 'ps-note', 'vd: Thanh toán cuối tháng', vals.note);
+
+  const btnRow = document.createElement('div'); btnRow.style.cssText = 'display:flex;gap:8px';
+  const saveBtn = document.createElement('button'); saveBtn.className = 'btn-save';
+  saveBtn.textContent = '💾 Lưu'; saveBtn.onclick = onSave;
+  const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn-save';
+  cancelBtn.style.background = 'var(--text3)'; cancelBtn.textContent = 'Huỷ';
+  cancelBtn.onclick = function(){ overlay.remove(); };
+  btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn);
+  sheet.appendChild(btnRow);
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+}
+
+function showAddPartnerSettings() {
+  buildPartnerPopup('🤝 Thêm đối tác', {}, savePartnerSettings);
 }
 
 function showEditPartnerSettings(id) {
   const p = partners.find(function(x){ return x.id===id; });
   if (!p) return;
-  const existing = document.getElementById('partner-settings-popup');
-  if (existing) existing.remove();
-  const popup = document.createElement('div');
-  popup.id = 'partner-settings-popup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto">'
-    +'<div style="font-size:14px;font-weight:600;color:var(--gt)">✏️ Sửa đối tác</div>'
-    +'<div class="field"><label>Tên đối tác</label><input type="text" id="ps-name" value="'+p.name+'"></div>'
-    +'<div class="field"><label>SĐT / Zalo</label><input type="text" id="ps-phone" value="'+(p.phone||'')+'" oninput="autoDetectCountry('ps-phone','ps-country')"></div>'
-    +'<div class="field"><label>Quốc gia</label><div style="display:flex;gap:6px">'
-    +'<input type="text" id="ps-country" value="'+(p.country||'')+'" placeholder="Tự nhận diện hoặc nhập tay" style="flex:1">'
-    +'<button class="btn-sm" onclick="autoDetectCountry('ps-phone','ps-country')" style="flex-shrink:0">🔍</button>'
-    +'</div></div>'
-    +'<div class="field"><label>Địa chỉ</label><input type="text" id="ps-address" value="'+(p.address||'')+'"></div>'
-    +'<div class="field"><label>Email</label><input type="text" id="ps-email" value="'+(p.email||'')+'"></div>'
-    +'<div class="field"><label>Ghi chú</label><input type="text" id="ps-note" value="'+(p.note||'')+'"></div>'
-    +'<div style="display:flex;gap:8px">'
-    +'<button class="btn-save" onclick="updatePartnerSettings(''+id+'')">💾 Lưu</button>'
-    +'<button class="btn-save" style="background:var(--text3)" onclick="document.getElementById('partner-settings-popup').remove()">Huỷ</button>'
-    +'</div></div>';
-  document.body.appendChild(popup);
-  popup.addEventListener('click', function(e){ if(e.target===popup) popup.remove(); });
+  buildPartnerPopup('✏️ Sửa đối tác', p, function(){ updatePartnerSettings(id); });
 }
 
 function autoDetectCountry(phoneId, countryId) {

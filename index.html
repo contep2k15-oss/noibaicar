@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '4.8';
+const APP_VERSION = '4.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1254,10 +1254,10 @@ function writeBookings(ss, bookings) {
 function writeRooms(ss, rooms) {
   var sh = ss.getSheetByName('NBC_ROOMS') || ss.insertSheet('NBC_ROOMS');
   sh.clearContents();
-  var headers = ['ID', 'Ten phong', 'Mo ta', 'Mau sac'];
+  var headers = ['Room', 'Don gia (k/diem)'];
   var rows = [headers];
   (rooms || []).forEach(function(r) {
-    rows.push([r.id||'', r.name||'', r.desc||'', r.color||'']);
+    rows.push([r.name||'', r.rate||0]);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
   styleHeader(sh, headers.length);

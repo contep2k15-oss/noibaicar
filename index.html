@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '7.6';
+const APP_VERSION = '7.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2257,13 +2257,87 @@ function openDetail(id) {
   html += '<button class="status-btn '+(b.statusPoints==='collected'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPoints\',\'collected\')">Đã thu điểm</button>';
   html += '</div></div></div>';
 
-  // TIN NHẮN
-  html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div><div class="card-body" style="gap:8px">';
-  html += '<button class="btn-main" style="background:var(--gt);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'driver\')">🚘 Xem tin điều xe</button>';
-  html += '<button class="btn-main" style="background:var(--blue);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'confirm\')">✅ Xem tin xác nhận VI/EN</button>';
-  html += '</div></div><div class="pb"></div>';
+  // TIN NHẮN - dùng createElement để tránh lỗi quote
+  const detailBody = document.getElementById('detail-body');
+  detailBody.innerHTML = html + '<div class="pb"></div>';
 
-  document.getElementById('detail-body').innerHTML = html;
+  // Card TIN NHẮN
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div>';
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  body.style.gap = '8px';
+
+  // Nút điều xe
+  const btnDrv = document.createElement('button');
+  btnDrv.className = 'btn-main';
+  btnDrv.style.cssText = 'background:var(--gt);font-size:13px;padding:10px';
+  btnDrv.innerHTML = '🚘 Xem tin điều xe';
+  btnDrv.onclick = (function(bid){ return function(){ showMsgPopup(bid,'driver'); }; })(id);
+
+  // Nút xác nhận VI/EN
+  const btnCfm = document.createElement('button');
+  btnCfm.className = 'btn-main';
+  btnCfm.style.cssText = 'background:var(--blue);font-size:13px;padding:10px';
+  btnCfm.innerHTML = '✅ Xem tin xác nhận VI/EN';
+  btnCfm.onclick = (function(bid){ return function(){ showMsgPopup(bid,'confirm'); }; })(id);
+
+  // Divider
+  const div = document.createElement('div');
+  div.style.cssText = 'font-size:11px;color:var(--text3);text-align:center;padding:2px 0';
+  div.textContent = '— Gửi cho khách —';
+
+  // Chọn ngôn ngữ
+  const langSel = document.createElement('select');
+  langSel.id = 'share-lang-' + id;
+  langSel.style.cssText = 'width:100%;padding:8px 10px;border:0.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)';
+  langSel.innerHTML = '<option value="vi">🇻🇳 Tiếng Việt</option><option value="en">🇬🇧 English</option>';
+
+  // Row Zalo + WhatsApp
+  const shareRow = document.createElement('div');
+  shareRow.style.cssText = 'display:flex;gap:8px';
+
+  const btnZalo = document.createElement('button');
+  btnZalo.className = 'btn-main';
+  btnZalo.style.cssText = 'flex:1;background:#0068FF;font-size:13px;padding:9px';
+  btnZalo.innerHTML = '💬 Zalo';
+  btnZalo.onclick = (function(bid){ return function(){
+    const b = bookings.find(function(x){ return x.id===bid; });
+    if (!b) return;
+    const lang = (document.getElementById('share-lang-'+bid)||{}).value||'vi';
+    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
+    const phone = (b.phone||'').replace(/\D/g,'');
+    if (!phone) { showToast('⚠️ Không có số điện thoại'); return; }
+    window.open('https://zalo.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+  }; })(id);
+
+  const btnWA = document.createElement('button');
+  btnWA.className = 'btn-main';
+  btnWA.style.cssText = 'flex:1;background:#25D366;font-size:13px;padding:9px';
+  btnWA.innerHTML = '💬 WhatsApp';
+  btnWA.onclick = (function(bid){ return function(){
+    const b = bookings.find(function(x){ return x.id===bid; });
+    if (!b) return;
+    const lang = (document.getElementById('share-lang-'+bid)||{}).value||'vi';
+    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
+    let phone = (b.phone||'').replace(/\D/g,'');
+    if (phone.startsWith('0')) phone = '84' + phone.substring(1);
+    if (!phone) { showToast('⚠️ Không có số điện thoại'); return; }
+    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+  }; })(id);
+
+  shareRow.appendChild(btnZalo);
+  shareRow.appendChild(btnWA);
+
+  body.appendChild(btnDrv);
+  body.appendChild(btnCfm);
+  body.appendChild(div);
+  body.appendChild(langSel);
+  body.appendChild(shareRow);
+  card.appendChild(body);
+  detailBody.appendChild(card);
+
   document.getElementById('detail-overlay').classList.add('active');
 }
 

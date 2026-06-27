@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '4.1';
+const APP_VERSION = '4.3';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2402,23 +2402,42 @@ function detectCountryFromPhone(phone) {
 function renderPartnerSettings() {
   const el = document.getElementById('partner-list-settings');
   if (!el) return;
+  el.innerHTML = '';
   if (!partners.length) {
     el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center">Chưa có đối tác nào</div>';
     return;
   }
-  el.innerHTML = partners.map(function(p) {
-    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--gb)">'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;font-weight:600;color:var(--text)">'+p.name+'</div>'
+  partners.forEach(function(p) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--gb)';
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0';
+    info.innerHTML = '<div style="font-size:14px;font-weight:600;color:var(--text)">'+p.name+'</div>'
       +(p.country?'<div style="font-size:12px;color:var(--text2)">'+p.country+'</div>':'')
       +(p.phone?'<div style="font-size:12px;color:var(--text3)">📞 '+p.phone+'</div>':'')
-      +(p.address?'<div style="font-size:12px;color:var(--text3)">📍 '+p.address+'</div>':'')
-      +'</div>'
-      +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +'<button class="btn-sm" onclick="showEditPartnerSettings(''+p.id+'')">✏️</button>'
-      +'<button class="btn-sm" style="background:var(--red);color:white" onclick="deletePartnerSettings(''+p.id+'')">🗑</button>'
-      +'</div></div>';
-  }).join('');
+      +(p.address?'<div style="font-size:12px;color:var(--text3)">📍 '+p.address+'</div>':'');
+
+    const btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-sm';
+    editBtn.textContent = '✏️';
+    editBtn.onclick = (function(id){ return function(){ showEditPartnerSettings(id); }; })(p.id);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-sm';
+    delBtn.style.cssText = 'background:var(--red);color:white';
+    delBtn.textContent = '🗑';
+    delBtn.onclick = (function(id){ return function(){ deletePartnerSettings(id); }; })(p.id);
+
+    btns.appendChild(editBtn);
+    btns.appendChild(delBtn);
+    row.appendChild(info);
+    row.appendChild(btns);
+    el.appendChild(row);
+  });
 }
 
 function showAddPartnerSettings() {

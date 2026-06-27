@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '6.5';
+const APP_VERSION = '6.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2206,7 +2206,7 @@ function openDetail(id) {
   vatCb.id = 'vat-cb-' + id;
   vatCb.checked = !!b.hasVAT;
   const vatSpan = document.createElement('span');
-  vatSpan.innerHTML = '🧾 VAT' + (b.hasVAT ? ' <b style="color:var(--red)">−' + vatAmt.toLocaleString('vi-VN') + ' VND</b>' : '');
+  vatSpan.innerHTML = 'VAT' + (b.hasVAT ? ' <b style="color:var(--red)">−' + vatAmt.toLocaleString('vi-VN') + ' VND</b>' : '');
   vatLabel.appendChild(vatCb);
   vatLabel.appendChild(vatSpan);
   extrasBody.appendChild(vatLabel);
@@ -2257,19 +2257,42 @@ function openDetail(id) {
   }
 
   extrasCard.appendChild(extrasBody);
-  document.getElementById('detail-body') && (html += extrasCard.outerHTML);
 
+  // TIN NHẮN card - dùng createElement để giữ event listeners
+  const tinNhanCard = document.createElement('div');
+  tinNhanCard.className = 'card';
+  const tinNhanHead = document.createElement('div');
+  tinNhanHead.className = 'card-head';
+  tinNhanHead.innerHTML = '<div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div>';
+  const tinNhanBody = document.createElement('div');
+  tinNhanBody.className = 'card-body';
+  tinNhanBody.style.gap = '8px';
+  const btnDriver = document.createElement('button');
+  btnDriver.className = 'btn-main';
+  btnDriver.style.cssText = 'background:var(--gt);font-size:13px;padding:10px';
+  btnDriver.innerHTML = '🚘 Xem tin điều xe';
+  btnDriver.onclick = (function(bid){ return function(){ showMsgPopup(bid,'driver'); }; })(id);
+  const btnConfirm = document.createElement('button');
+  btnConfirm.className = 'btn-main';
+  btnConfirm.style.cssText = 'background:var(--blue);font-size:13px;padding:10px';
+  btnConfirm.innerHTML = '✅ Xem tin xác nhận VI/EN';
+  btnConfirm.onclick = (function(bid){ return function(){ showMsgPopup(bid,'confirm'); }; })(id);
+  tinNhanBody.appendChild(btnDriver);
+  tinNhanBody.appendChild(btnConfirm);
+  tinNhanCard.appendChild(tinNhanHead);
+  tinNhanCard.appendChild(tinNhanBody);
 
-  // TIN NHẮN
-  html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div><div class="card-body" style="gap:8px">';
-  html += '<button class="btn-main" style="background:var(--gt);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'driver\')">🚘 Xem tin điều xe</button>';
-  html += '<button class="btn-main" style="background:var(--blue);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'confirm\')">✅ Xem tin xác nhận VI/EN</button>';
-  html += '</div></div><div class="pb"></div>';
+  const pbDiv = document.createElement('div');
+  pbDiv.className = 'pb';
 
-  document.getElementById('detail-body').innerHTML = html;
+  html += '';
+  const detailBody = document.getElementById('detail-body');
+  detailBody.innerHTML = html;
+  detailBody.appendChild(extrasCard);
+  detailBody.appendChild(tinNhanCard);
+  detailBody.appendChild(pbDiv);
   document.getElementById('detail-overlay').classList.add('active');
 }
-
 function showMsgPopup(id, type) {
   const b = bookings.find(function(x){ return x.id === id; });
   if (!b) return;

@@ -579,7 +579,7 @@
       <button class="btn-save" onclick="syncPush()">⬆️ Đẩy lên</button>
       <button class="btn-save" style="background:var(--blue)" onclick="syncPull()">⬇️ Tải về</button>
     </div>
-    <button class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã & hướng dẫn cài đặt</button>
+    <button id="btn-apps-script" class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã Apps Script & hướng dẫn</button>
       </div>
     </div>
 
@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -795,6 +795,8 @@ function initApp() {
   // Hide API group for non-admin too (admin-only)
   const apiGroupEl = document.getElementById('settings-api-group');
   if (apiGroupEl) apiGroupEl.style.display = isAdmin ? '' : 'none';
+  var apsBtnEl = document.getElementById('btn-apps-script');
+  if (apsBtnEl) apsBtnEl.style.display = isAdmin ? '' : 'none';
   // Tab Phiên bản hiện cho tất cả user
   const versionGroupEl = document.getElementById('settings-version-group');
   if (versionGroupEl) versionGroupEl.style.display = '';
@@ -1087,7 +1089,7 @@ async function syncPull(silent) {
     if (Array.isArray(data.rooms)) { rooms = data.rooms; localStorage.setItem('nbc_rooms', JSON.stringify(rooms)); }
     if (Array.isArray(data.partners)) { partners = data.partners; localStorage.setItem('nbc_partners', JSON.stringify(partners)); }
     if (data.customers && typeof data.customers === 'object') localStorage.setItem('nbc_customers', JSON.stringify(data.customers));
-    renderRoomSettings(); renderBookings();
+    renderRoomSettings(); renderBookings(); renderPartnerSettings();
     if (!silent) showToast('✓ Đã tải về (' + bookings.length + ' booking)');
   } catch(e){ if (!silent) showToast('❌ Lỗi kết nối: ' + e.message); }
 }
@@ -1145,6 +1147,7 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
       customers: data.customers || {}
     });
     writeBookings(ss, data.bookings || []);
+    writePartners(ss, data.partners || []);
     return jsonOut({ ok: true, count: (data.bookings || []).length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
@@ -1230,6 +1233,32 @@ function writeBookings(ss, bookings) {
     rows.push([b.id||'', b.name||'', b.phone||'', b.date||'', b.route||'', b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'', (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'', b.statusDrive||'', b.statusPay||'', b.statusPoints||'', b.note||'']);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
+}
+
+function writePartners(ss, partners) {
+  var sh = ss.getSheetByName('NBC_PARTNERS') || ss.insertSheet('NBC_PARTNERS');
+  sh.clearContents();
+  var headers = ['ID', 'Ten doi tac', 'SDT / Zalo', 'Quoc gia', 'Dia chi', 'Email', 'Ghi chu', 'So booking'];
+  var rows = [headers];
+  (partners || []).forEach(function(p) {
+    rows.push([
+      p.id || '',
+      p.name || '',
+      p.phone || '',
+      p.country || '',
+      p.address || '',
+      p.email || '',
+      p.note || '',
+      (p.bookingIds || []).length
+    ]);
+  });
+  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  // Format header row
+  var headerRange = sh.getRange(1, 1, 1, headers.length);
+  headerRange.setBackground('#1A5C38');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setFontWeight('bold');
+  sh.setFrozenRows(1);
 }
 
 function jsonOut(obj) {

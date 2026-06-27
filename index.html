@@ -580,6 +580,27 @@
       <button class="btn-save" style="background:var(--blue)" onclick="syncPull()">⬇️ Tải về</button>
     </div>
     <button id="btn-apps-script" class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã Apps Script & hướng dẫn</button>
+    <div class="settings-card" style="margin-top:10px">
+      <div class="settings-row">
+        <div class="settings-label">🔔 Cảnh báo trước</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="tele-alert-hours" min="1" max="48" value="3" onchange="saveTeleConfig()" style="width:60px;padding:5px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);text-align:center">
+          <span style="font-size:13px;color:var(--text2)">giờ</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">Booking mới</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="tele-notify-new" onchange="saveTeleConfig()" checked> Bật
+        </label>
+      </div>
+      <div class="settings-row" style="border-bottom:none">
+        <div class="settings-label">Chưa điều xe</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="tele-notify-unassigned" onchange="saveTeleConfig()" checked> Bật
+        </label>
+      </div>
+    </div>
       </div>
     </div>
 
@@ -663,7 +684,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '7.9';
+const APP_VERSION = '8.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -986,6 +1007,7 @@ function toggleAcc(id){
   var head = body.previousElementSibling;
   if (head) head.classList.toggle('open', open);
   if (open && id === 'partners') renderPartnerSettings();
+  if (open && id === 'sync') loadTeleConfig();
 }
 function saveSettings() {
   const key = document.getElementById('api-key-input').value.trim();
@@ -1049,6 +1071,26 @@ function saveSheetUrl() {
 }
 // ===== AUTO SYNC =====
 let autoSyncTimer = null;
+function saveTeleConfig() {
+  const hours = parseInt((document.getElementById('tele-alert-hours')||{}).value||3);
+  const notifyNew = document.getElementById('tele-notify-new') ? document.getElementById('tele-notify-new').checked : true;
+  const notifyUnassigned = document.getElementById('tele-notify-unassigned') ? document.getElementById('tele-notify-unassigned').checked : true;
+  const cfg = { alertHours: hours, notifyNew, notifyUnassigned };
+  localStorage.setItem('nbc_tele_config', JSON.stringify(cfg));
+  scheduleAutoSync();
+  showToast('✓ Đã lưu cài đặt Telegram');
+}
+
+function loadTeleConfig() {
+  const cfg = JSON.parse(localStorage.getItem('nbc_tele_config') || '{}');
+  const h = document.getElementById('tele-alert-hours');
+  if (h && cfg.alertHours) h.value = cfg.alertHours;
+  const nn = document.getElementById('tele-notify-new');
+  if (nn && cfg.notifyNew === false) nn.checked = false;
+  const nu = document.getElementById('tele-notify-unassigned');
+  if (nu && cfg.notifyUnassigned === false) nu.checked = false;
+}
+
 function scheduleAutoSync() {
   clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(function() { syncPush(true); }, 4000);
@@ -1066,7 +1108,8 @@ async function syncPush(silent) {
         rooms: rooms,
         partners: partners,
         customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}'),
-        users: JSON.parse(localStorage.getItem('nbc_users') || '[]')
+        users: JSON.parse(localStorage.getItem('nbc_users') || '[]'),
+        teleConfig: JSON.parse(localStorage.getItem('nbc_tele_config') || '{}')
       }),
       redirect:'follow'
     });

@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '7.4';
+const APP_VERSION = '7.5';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1560,11 +1560,11 @@ function checkAndNotify() {
         var bd = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
         var diff = (bd - now) / (1000*60*60);
         if (diff >= 0 && diff <= hours) {
-          alerts.push('[Chua dieu] ' + (b.id||'') + ' - ' + (b.name||'') + '\n' + (b.route||'--') + ' - ' + ds);
+          alerts.push('[Chua dieu] ' + (b.id||'') + ' - ' + (b.name||'') + '\\n' + (b.route||'--') + ' - ' + ds);
         }
       } catch(e) {}
     });
-    if (alerts.length) sendTelegram('Canh bao chua dieu xe trong ' + hours + ' gio toi\n\n' + alerts.join('\n\n'));
+    if (alerts.length) sendTelegram('Canh bao chua dieu xe trong ' + hours + ' gio toi\\n\\n' + alerts.join('\\n\\n'));
   } catch(err) { sendTelegram('[NBC] Loi: ' + String(err)); }
 }
 

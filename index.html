@@ -550,6 +550,14 @@
       </div>
     </div>
 
+    <div class="settings-group" id="settings-partners-group">
+      <button class="acc-head" onclick="toggleAcc('partners')"><span class="acc-icon">🤝</span><span class="acc-title">Quản lý Đối tác</span><span class="acc-arrow">▶</span></button>
+      <div class="acc-body" id="acc-partners">
+        <div class="settings-card" id="partner-list-settings"></div>
+        <button class="btn-save" style="background:var(--blue)" onclick="showAddPartnerSettings()">+ Thêm đối tác</button>
+      </div>
+    </div>
+
     <div class="settings-group" id="settings-sync-group">
       <button class="acc-head" onclick="toggleAcc('sync')"><span class="acc-icon">🔄</span><span class="acc-title">Đồng bộ Google Sheets</span><span class="acc-arrow">▶</span></button>
       <div class="acc-body" id="acc-sync">
@@ -655,11 +663,11 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
-const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-data'];
+const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-data','settings-partners'];
 const BOOKING_FEATURES = ['booking-edit-points','booking-points-status','booking-delete'];
 
 function getUsers() {
@@ -774,7 +782,8 @@ function initApp() {
   const settingsFeatureMap = {
     'settings-rooms': 'settings-room-group',
     'settings-sync': 'settings-sync-group',
-    'settings-data': 'settings-data-group'
+    'settings-data': 'settings-data-group',
+    'settings-partners': 'settings-partners-group'
   };
   SETTINGS_FEATURES.forEach(function(sf) {
     const groupEl = document.getElementById(settingsFeatureMap[sf]);
@@ -830,7 +839,7 @@ function renderUserSettings() {
     el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Chưa có người dùng nào</div>';
     return;
   }
-  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-data':'Dữ liệu / Xuất Excel','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking'};
+  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-data':'Dữ liệu / Xuất Excel','settings-partners':'Quản lý Đối tác','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking'};
   el.innerHTML = users.map(function(u,i){
     const fLabels = (u.features||[]).map(function(f){ return featureLabels[f]||f; }).join(', ') || 'Không có quyền';
     return '<div class="room-item">'+
@@ -856,7 +865,7 @@ function showEditUserForm(idx) {
 function showUserForm(idx) {
   const users = getUsers();
   const u = idx !== null ? users[idx] : null;
-  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-data':'💾 Dữ liệu / Xuất Excel','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking'};
+  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-data':'💾 Dữ liệu / Xuất Excel','settings-partners':'🤝 Quản lý Đối tác','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking'};
   const allFeaturesToShow = ALL_FEATURES.concat(SETTINGS_FEATURES).concat(BOOKING_FEATURES);
   const checkboxes = allFeaturesToShow.map(function(f){
     const checked = u && (u.features||[]).includes(f) ? 'checked' : '';
@@ -974,6 +983,7 @@ function toggleAcc(id){
   var open = body.classList.toggle('open');
   var head = body.previousElementSibling;
   if (head) head.classList.toggle('open', open);
+  if (open && id === 'partners') renderPartnerSettings();
 }
 function saveSettings() {
   const key = document.getElementById('api-key-input').value.trim();
@@ -1626,7 +1636,7 @@ function handleCheckDoiTacDyn(id) {
       const sel = document.getElementById('partner-select-'+id);
       sel.innerHTML = !partners.length ? '<option value="">— Chưa có đối tác —</option>' :
         '<option value="">— Chọn đối tác —</option>' +
-        partners.map(function(p){ return '<option value="'+p.id+'">'+p.name+(p.phone?' • '+p.phone:'')+'</option>'; }).join('');
+        partners.map(function(p){ return '<option value="'+p.id+'">'+p.name+(p.country?' ('+p.country+')':'')+(p.phone?' • '+p.phone:'')+'</option>'; }).join('');
       document.getElementById('partner-select-wrap-'+id).style.display = 'flex';
     } else {
       document.getElementById('partner-select-wrap-'+id).style.display = 'none';
@@ -2237,7 +2247,9 @@ function openKHDetail(type, idOrData) {
       +'<div class="card"><div class="card-head"><div class="card-head-left"><span>📞</span><span>Thông tin liên hệ</span></div>'
       +'<button class="btn-sm" onclick="showEditPartner(\''+p.id+'\')">Sửa</button></div>'
       +'<div class="card-body" style="gap:6px">'
+      +(p.country?'<div style="font-size:13px;color:var(--text2)">🌍 '+p.country+'</div>':'')
       +(p.phone?'<div style="font-size:13px;color:var(--text2)">📞 <b>'+p.phone+'</b></div>':'')
+      +(p.address?'<div style="font-size:13px;color:var(--text2)">📍 '+p.address+'</div>':'')
       +(p.email?'<div style="font-size:13px;color:var(--text2)">✉️ '+p.email+'</div>':'')
       +(p.note?'<div style="font-size:13px;color:var(--text2)">📝 '+p.note+'</div>':'')
       +'</div></div>'
@@ -2355,6 +2367,165 @@ function updatePartner(id) {
   document.getElementById('edit-kh-popup').remove();
   openKHDetail('doitac', id);
   showToast('✓ Đã cập nhật đối tác');
+}
+
+
+// ===== NHẬN DIỆN QUỐC GIA TỪ SĐT =====
+function detectCountryFromPhone(phone) {
+  if (!phone) return '';
+  const p = phone.replace(/[\s\-().]/g, '');
+  const map = [
+    ['+84','Việt Nam 🇻🇳'],['+1','Mỹ 🇺🇸'],['+44','Anh 🇬🇧'],['+61','Úc 🇦🇺'],
+    ['+91','Ấn Độ 🇮🇳'],['+86','Trung Quốc 🇨🇳'],['+81','Nhật Bản 🇯🇵'],['+82','Hàn Quốc 🇰🇷'],
+    ['+33','Pháp 🇫🇷'],['+49','Đức 🇩🇪'],['+65','Singapore 🇸🇬'],['+60','Malaysia 🇲🇾'],
+    ['+66','Thái Lan 🇹🇭'],['+62','Indonesia 🇮🇩'],['+63','Philippines 🇵🇭'],['+886','Đài Loan 🇹🇼'],
+    ['+852','Hồng Kông 🇭🇰'],['+971','UAE 🇦🇪'],['+966','Ả Rập Xê Út 🇸🇦'],['+7','Nga 🇷🇺'],
+    ['+55','Brazil 🇧🇷'],['+34','Tây Ban Nha 🇪🇸'],['+39','Ý 🇮🇹'],['+31','Hà Lan 🇳🇱'],
+    ['+41','Thụy Sĩ 🇨🇭'],['+46','Thụy Điển 🇸🇪'],['+47','Na Uy 🇳🇴'],['+45','Đan Mạch 🇩🇰'],
+    ['+358','Phần Lan 🇫🇮'],['+48','Ba Lan 🇵🇱'],['+420','Séc 🇨🇿'],['+36','Hungary 🇭🇺'],
+    ['+90','Thổ Nhĩ Kỳ 🇹🇷'],['+20','Ai Cập 🇪🇬'],['+27','Nam Phi 🇿🇦'],['+234','Nigeria 🇳🇬'],
+    ['+254','Kenya 🇰🇪'],['+64','New Zealand 🇳🇿'],['+94','Sri Lanka 🇱🇰'],['+977','Nepal 🇳🇵'],
+    ['+880','Bangladesh 🇧🇩'],['+92','Pakistan 🇵🇰'],['+98','Iran 🇮🇷'],['+964','Iraq 🇮🇶'],
+    ['+972','Israel 🇮🇱'],['+962','Jordan 🇯🇴'],['+961','Lebanon 🇱🇧'],
+  ];
+  // Sort by length desc để match dài trước
+  map.sort(function(a,b){ return b[0].length - a[0].length; });
+  for (var i=0; i<map.length; i++) {
+    if (p.startsWith(map[i][0])) return map[i][1];
+  }
+  // SĐT nội địa VN (0xxx)
+  if (/^0[3-9]\d{8}$/.test(p)) return 'Việt Nam 🇻🇳';
+  return '';
+}
+
+// ===== SETTINGS: QUẢN LÝ ĐỐI TÁC =====
+function renderPartnerSettings() {
+  const el = document.getElementById('partner-list-settings');
+  if (!el) return;
+  if (!partners.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center">Chưa có đối tác nào</div>';
+    return;
+  }
+  el.innerHTML = partners.map(function(p) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--gb)">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:14px;font-weight:600;color:var(--text)">'+p.name+'</div>'
+      +(p.country?'<div style="font-size:12px;color:var(--text2)">'+p.country+'</div>':'')
+      +(p.phone?'<div style="font-size:12px;color:var(--text3)">📞 '+p.phone+'</div>':'')
+      +(p.address?'<div style="font-size:12px;color:var(--text3)">📍 '+p.address+'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0">'
+      +'<button class="btn-sm" onclick="showEditPartnerSettings(''+p.id+'')">✏️</button>'
+      +'<button class="btn-sm" style="background:var(--red);color:white" onclick="deletePartnerSettings(''+p.id+'')">🗑</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+function showAddPartnerSettings() {
+  const existing = document.getElementById('partner-settings-popup');
+  if (existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id = 'partner-settings-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto">'
+    +'<div style="font-size:14px;font-weight:600;color:var(--gt)">🤝 Thêm đối tác</div>'
+    +'<div class="field"><label>Tên đối tác *</label><input type="text" id="ps-name" placeholder="vd: Booking Agent India"></div>'
+    +'<div class="field"><label>SĐT / Zalo</label><input type="text" id="ps-phone" placeholder="vd: +91 78372 32383" oninput="autoDetectCountry('ps-phone','ps-country')"></div>'
+    +'<div class="field"><label>Quốc gia</label><div style="display:flex;gap:6px">'
+    +'<input type="text" id="ps-country" placeholder="Tự nhận diện hoặc nhập tay" style="flex:1">'
+    +'<button class="btn-sm" onclick="autoDetectCountry('ps-phone','ps-country')" style="flex-shrink:0">🔍</button>'
+    +'</div></div>'
+    +'<div class="field"><label>Địa chỉ</label><input type="text" id="ps-address" placeholder="vd: 123 MG Road, Mumbai, India"></div>'
+    +'<div class="field"><label>Email</label><input type="text" id="ps-email" placeholder="vd: agent@booking.in"></div>'
+    +'<div class="field"><label>Ghi chú</label><input type="text" id="ps-note" placeholder="vd: Thanh toán cuối tháng"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn-save" onclick="savePartnerSettings()">💾 Lưu đối tác</button>'
+    +'<button class="btn-save" style="background:var(--text3)" onclick="document.getElementById('partner-settings-popup').remove()">Huỷ</button>'
+    +'</div></div>';
+  document.body.appendChild(popup);
+  popup.addEventListener('click', function(e){ if(e.target===popup) popup.remove(); });
+}
+
+function showEditPartnerSettings(id) {
+  const p = partners.find(function(x){ return x.id===id; });
+  if (!p) return;
+  const existing = document.getElementById('partner-settings-popup');
+  if (existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id = 'partner-settings-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto">'
+    +'<div style="font-size:14px;font-weight:600;color:var(--gt)">✏️ Sửa đối tác</div>'
+    +'<div class="field"><label>Tên đối tác</label><input type="text" id="ps-name" value="'+p.name+'"></div>'
+    +'<div class="field"><label>SĐT / Zalo</label><input type="text" id="ps-phone" value="'+(p.phone||'')+'" oninput="autoDetectCountry('ps-phone','ps-country')"></div>'
+    +'<div class="field"><label>Quốc gia</label><div style="display:flex;gap:6px">'
+    +'<input type="text" id="ps-country" value="'+(p.country||'')+'" placeholder="Tự nhận diện hoặc nhập tay" style="flex:1">'
+    +'<button class="btn-sm" onclick="autoDetectCountry('ps-phone','ps-country')" style="flex-shrink:0">🔍</button>'
+    +'</div></div>'
+    +'<div class="field"><label>Địa chỉ</label><input type="text" id="ps-address" value="'+(p.address||'')+'"></div>'
+    +'<div class="field"><label>Email</label><input type="text" id="ps-email" value="'+(p.email||'')+'"></div>'
+    +'<div class="field"><label>Ghi chú</label><input type="text" id="ps-note" value="'+(p.note||'')+'"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn-save" onclick="updatePartnerSettings(''+id+'')">💾 Lưu</button>'
+    +'<button class="btn-save" style="background:var(--text3)" onclick="document.getElementById('partner-settings-popup').remove()">Huỷ</button>'
+    +'</div></div>';
+  document.body.appendChild(popup);
+  popup.addEventListener('click', function(e){ if(e.target===popup) popup.remove(); });
+}
+
+function autoDetectCountry(phoneId, countryId) {
+  const phone = (document.getElementById(phoneId)||{}).value||'';
+  const country = detectCountryFromPhone(phone);
+  const el = document.getElementById(countryId);
+  if (el && country) el.value = country;
+}
+
+function savePartnerSettings() {
+  const name = (document.getElementById('ps-name')||{}).value||'';
+  if (!name.trim()) { showToast('⚠️ Vui lòng nhập tên đối tác'); return; }
+  const p = {
+    id: 'dt-'+Date.now(),
+    name: name.trim(),
+    phone: (document.getElementById('ps-phone')||{}).value||'',
+    country: (document.getElementById('ps-country')||{}).value||'',
+    address: (document.getElementById('ps-address')||{}).value||'',
+    email: (document.getElementById('ps-email')||{}).value||'',
+    note: (document.getElementById('ps-note')||{}).value||'',
+    bookingIds: []
+  };
+  partners.push(p);
+  localStorage.setItem('nbc_partners', JSON.stringify(partners));
+  scheduleAutoSync();
+  document.getElementById('partner-settings-popup').remove();
+  renderPartnerSettings();
+  showToast('✓ Đã thêm đối tác: '+p.name);
+}
+
+function updatePartnerSettings(id) {
+  const p = partners.find(function(x){ return x.id===id; });
+  if (!p) return;
+  p.name = (document.getElementById('ps-name')||{}).value||p.name;
+  p.phone = (document.getElementById('ps-phone')||{}).value||'';
+  p.country = (document.getElementById('ps-country')||{}).value||'';
+  p.address = (document.getElementById('ps-address')||{}).value||'';
+  p.email = (document.getElementById('ps-email')||{}).value||'';
+  p.note = (document.getElementById('ps-note')||{}).value||'';
+  localStorage.setItem('nbc_partners', JSON.stringify(partners));
+  scheduleAutoSync();
+  document.getElementById('partner-settings-popup').remove();
+  renderPartnerSettings();
+  showToast('✓ Đã cập nhật: '+p.name);
+}
+
+function deletePartnerSettings(id) {
+  const p = partners.find(function(x){ return x.id===id; });
+  if (!p) return;
+  if (!confirm('Xoá đối tác "'+p.name+'"?')) return;
+  partners = partners.filter(function(x){ return x.id !== id; });
+  localStorage.setItem('nbc_partners', JSON.stringify(partners));
+  scheduleAutoSync();
+  renderPartnerSettings();
+  showToast('✓ Đã xoá đối tác');
 }
 
 // ===== BÁO CÁO =====

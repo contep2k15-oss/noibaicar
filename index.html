@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '4.6';
+const APP_VERSION = '4.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1135,7 +1135,6 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var action = (e && e.parameter && e.parameter.action) || data.action || '';
-    // Lưu users riêng
     if (action === 'saveUsers') {
       saveUsers(ss, data.users || []);
       return jsonOut({ ok: true });
@@ -1147,7 +1146,9 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
       customers: data.customers || {}
     });
     writeBookings(ss, data.bookings || []);
+    writeRooms(ss, data.rooms || []);
     writePartners(ss, data.partners || []);
+    writeCustomers(ss, data.customers || {});
     return jsonOut({ ok: true, count: (data.bookings || []).length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
@@ -1224,15 +1225,42 @@ function loadData(ss) {
   return str ? JSON.parse(str) : null;
 }
 
+function styleHeader(sh, numCols) {
+  var r = sh.getRange(1, 1, 1, numCols);
+  r.setBackground('#1A5C38');
+  r.setFontColor('#FFFFFF');
+  r.setFontWeight('bold');
+  sh.setFrozenRows(1);
+}
+
 function writeBookings(ss, bookings) {
-  var sh = ss.getSheetByName('Bookings') || ss.insertSheet('Bookings');
+  var sh = ss.getSheetByName('NBC_BOOKINGS') || ss.insertSheet('NBC_BOOKINGS');
   sh.clearContents();
-  var headers = ['Ma','Ten khach','SDT','Ngay','Lo trinh','Loai xe','Gia dieu','Gia VP','Room','Diem','Loai khach','Doi tac','TT dieu xe','TT thanh toan','TT diem','Ghi chu'];
+  var headers = ['Ma','Ten khach','SDT','Ngay','Lo trinh','Loai xe','Gia dieu','Gia VP','Room','Diem','Loai khach','Doi tac','TT dieu xe','TT thanh toan','TT diem','Ghi chu','Ngay tao'];
   var rows = [headers];
-  bookings.forEach(function(b) {
-    rows.push([b.id||'', b.name||'', b.phone||'', b.date||'', b.route||'', b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'', (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'', b.statusDrive||'', b.statusPay||'', b.statusPoints||'', b.note||'']);
+  (bookings || []).forEach(function(b) {
+    rows.push([
+      b.id||'', b.name||'', b.phone||'', b.date||'', b.route||'',
+      b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'',
+      (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'',
+      b.statusDrive||'', b.statusPay||'', b.statusPoints||'',
+      b.note||'', b.createdAt||''
+    ]);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  styleHeader(sh, headers.length);
+}
+
+function writeRooms(ss, rooms) {
+  var sh = ss.getSheetByName('NBC_ROOMS') || ss.insertSheet('NBC_ROOMS');
+  sh.clearContents();
+  var headers = ['ID', 'Ten phong', 'Mo ta', 'Mau sac'];
+  var rows = [headers];
+  (rooms || []).forEach(function(r) {
+    rows.push([r.id||'', r.name||'', r.desc||'', r.color||'']);
+  });
+  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  styleHeader(sh, headers.length);
 }
 
 function writePartners(ss, partners) {
@@ -1242,28 +1270,31 @@ function writePartners(ss, partners) {
   var rows = [headers];
   (partners || []).forEach(function(p) {
     rows.push([
-      p.id || '',
-      p.name || '',
-      p.phone || '',
-      p.country || '',
-      p.address || '',
-      p.email || '',
-      p.note || '',
-      (p.bookingIds || []).length
+      p.id||'', p.name||'', p.phone||'', p.country||'',
+      p.address||'', p.email||'', p.note||'',
+      (p.bookingIds||[]).length
     ]);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
-  // Format header row
-  var headerRange = sh.getRange(1, 1, 1, headers.length);
-  headerRange.setBackground('#1A5C38');
-  headerRange.setFontColor('#FFFFFF');
-  headerRange.setFontWeight('bold');
-  sh.setFrozenRows(1);
+  styleHeader(sh, headers.length);
+}
+
+function writeCustomers(ss, customers) {
+  var sh = ss.getSheetByName('NBC_CUSTOMERS') || ss.insertSheet('NBC_CUSTOMERS');
+  sh.clearContents();
+  var headers = ['SDT / Key', 'Tags', 'Ghi chu'];
+  var rows = [headers];
+  Object.keys(customers || {}).forEach(function(key) {
+    var c = customers[key];
+    rows.push([key, (c.tags||[]).join(', '), c.note||'']);
+  });
+  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  styleHeader(sh, headers.length);
 }
 
 function jsonOut(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}`;
+}\`
 
 // ===== ROOMS =====
 function renderRoomSettings() {

@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '6.0';
+const APP_VERSION = '6.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1938,7 +1938,8 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     isTK: isTK, isCK: isCK,
     statusDrive: 'processing', statusPay: 'unpaid', statusPoints: 'unpending',
     room: '', points: '', pointsAmount: 0,
-    custType: 'le', partnerId: '', partnerName: '', note: ''
+    custType: 'le', partnerId: '', partnerName: '', note: '',
+    extras: [], hasVAT: false
   };
   const isDoiTac = document.getElementById('cb-doi-tac-'+id) && document.getElementById('cb-doi-tac-'+id).checked;
   if (isDoiTac) {
@@ -2178,6 +2179,46 @@ function openDetail(id) {
   html += '<button class="status-btn '+(b.statusPoints==='collected'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPoints\',\'collected\')">Đã thu điểm</button>';
   html += '</div></div></div>';
 
+  // PHÍ PHÁT SINH + VAT
+  const extras = b.extras || [];
+  const totalExtras = extras.reduce(function(s,e){ return s + (parseFloat(e.amount)||0); }, 0);
+  const vpNum = parseMoneyNum(b.priceVP);
+  const vatAmt = b.hasVAT ? Math.round(vpNum * 0.92 * 0.20) : 0;
+  const totalDeduct = totalExtras + vatAmt;
+
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-head-left"><span>➖</span><span>Phí phát sinh & VAT</span></div></div>';
+  html += '<div class="card-body" style="gap:8px">';
+
+  // VAT checkbox
+  html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">';
+  html += '<input type="checkbox" id="vat-cb-'+id+'" '+(b.hasVAT?'checked':'')+' onchange="toggleVAT(''+id+'')">';
+  html += '<span>🧾 VAT'+(b.hasVAT?' <b style="color:var(--red)">−'+vatAmt.toLocaleString('vi-VN')+' VND</b>':'')+'</span></label>';
+
+  // Danh sách phí phát sinh
+  if (extras.length) {
+    html += '<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">';
+    extras.forEach(function(e, i) {
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:13px">';
+      html += '<span style="flex:1;color:var(--text2)">− '+(e.note||'Phí phát sinh')+': <b style="color:var(--red)">'+Number(e.amount||0).toLocaleString('vi-VN')+' VND</b></span>';
+      html += '<button class="btn-sm" style="background:var(--red);color:white;flex-shrink:0" onclick="removeExtra(''+id+'','+i+')">✕</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Form thêm phí phát sinh
+  html += '<div style="display:flex;gap:6px;margin-top:4px">';
+  html += '<input type="text" id="extra-note-'+id+'" placeholder="Chú thích (VD: Phí cầu đường)" style="flex:2;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit">';
+  html += '<input type="number" id="extra-amt-'+id+'" placeholder="Số tiền" style="flex:1;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit">';
+  html += '<button class="btn-sm" style="background:var(--blue);color:white;flex-shrink:0" onclick="addExtra(''+id+'')">+ Thêm</button>';
+  html += '</div>';
+
+  if (totalDeduct > 0) {
+    html += '<div style="font-size:13px;font-weight:600;color:var(--red);margin-top:4px">Tổng khấu trừ: −'+totalDeduct.toLocaleString('vi-VN')+' VND</div>';
+  }
+  html += '</div></div>';
+
   // TIN NHẮN
   html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div><div class="card-body" style="gap:8px">';
   html += '<button class="btn-main" style="background:var(--gt);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'driver\')">🚘 Xem tin điều xe</button>';
@@ -2256,6 +2297,38 @@ function showMsgPopup(id, type) {
 function closeDetail() {
   document.getElementById('detail-overlay').classList.remove('active');
   renderBookings();
+}
+
+function toggleVAT(id) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  b.hasVAT = document.getElementById('vat-cb-'+id).checked;
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  openDetail(id);
+}
+
+function addExtra(id) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  const note = (document.getElementById('extra-note-'+id)||{}).value||'';
+  const amt = parseFloat((document.getElementById('extra-amt-'+id)||{}).value||0);
+  if (!amt || isNaN(amt)) { showToast('⚠️ Vui lòng nhập số tiền'); return; }
+  if (!b.extras) b.extras = [];
+  b.extras.push({ note: note.trim()||'Phí phát sinh', amount: amt });
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  openDetail(id);
+  showToast('✓ Đã thêm phí phát sinh');
+}
+
+function removeExtra(id, idx) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b || !b.extras) return;
+  b.extras.splice(idx, 1);
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  openDetail(id);
 }
 
 function updateStatus(id, field, value) {
@@ -2936,6 +3009,12 @@ function fmtDate(val) {
   return val;
 }
 
+function calcDeductions(b) {
+  const extras = (b.extras||[]).reduce(function(s,e){ return s+(parseFloat(e.amount)||0); }, 0);
+  const vat = b.hasVAT ? Math.round(parseMoneyNum(b.priceVP) * 0.92 * 0.20) : 0;
+  return extras + vat;
+}
+
 function calcPointsMoney(b) {
   const r = rooms.find(function(r){ return r.name === b.room; });
   return (r && b.points) ? parseFloat(b.points) * r.rate : 0;
@@ -2966,7 +3045,8 @@ function renderBaoCao() {
   const tongTienDiem = diemDaThu + diemChuaThu;
 
   // Doanh số thực thu = Doanh thu VP - Chi phí điều xe + Tiền điểm
-  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem;
+  const tongKhauTru = list.reduce(function(s,b){ return s + calcDeductions(b); }, 0);
+  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem - tongKhauTru;
 
   const dangXuLy = list.filter(function(b){ return b.statusDrive==='processing'; }).length;
   const daDieu = list.filter(function(b){ return b.statusDrive==='done'; }).length;
@@ -3009,10 +3089,11 @@ function renderBaoCao() {
   html += '<div class="bc-card orange"><div class="bc-label">Tiền điểm chưa thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemChuaThu)+'</div></div>';
 
   // Doanh số thực thu
+  html += '<div class="bc-card orange"><div class="bc-label">Tổng khấu trừ (phí+VAT)</div><div class="bc-value" style="font-size:15px;color:var(--red)">−'+fmtVND(tongKhauTru)+'</div></div>';
   html += '<div class="bc-card full" style="border:1.5px solid var(--gm);background:var(--gl)">'
     + '<div class="bc-label">Doanh số thực thu</div>'
     + '<div class="bc-value" style="font-size:18px;color:var(--gd)">'+fmtVND(doanhSoThucThu)+'</div>'
-    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm</div>'
+    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm  −  '+fmtVND(tongKhauTru)+' khấu trừ</div>'
     + '</div>';
 
   html += '</div>';

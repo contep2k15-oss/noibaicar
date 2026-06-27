@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '6.1';
+const APP_VERSION = '6.3';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2191,9 +2191,15 @@ function openDetail(id) {
   html += '<div class="card-body" style="gap:8px">';
 
   // VAT checkbox
-  html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">';
-  html += '<input type="checkbox" id="vat-cb-'+id+'" '+(b.hasVAT?'checked':'')+' onchange="toggleVAT(''+id+'')">';
-  html += '<span>🧾 VAT'+(b.hasVAT?' <b style="color:var(--red)">−'+vatAmt.toLocaleString('vi-VN')+' VND</b>':'')+'</span></label>';
+  const vatCb = document.createElement('input');
+  vatCb.type = 'checkbox'; vatCb.id = 'vat-cb-'+id; if(b.hasVAT) vatCb.checked = true;
+  vatCb.onchange = (function(bid){ return function(){ toggleVAT(bid); }; })(id);
+  const vatLabel = document.createElement('label');
+  vatLabel.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer';
+  const vatSpan = document.createElement('span');
+  vatSpan.innerHTML = '🧾 VAT'+(b.hasVAT?' <b style="color:var(--red)">−'+vatAmt.toLocaleString('vi-VN')+' VND</b>':'');
+  vatLabel.appendChild(vatCb); vatLabel.appendChild(vatSpan);
+  html += vatLabel.outerHTML;
 
   // Danh sách phí phát sinh
   if (extras.length) {

@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '5.7';
+const APP_VERSION = '5.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1408,7 +1408,10 @@ function writeBaoCao(ss, bookings, rooms, partners) {
 
   function parseM(val) {
     if (!val) return 0;
-    var s = String(val).trim().toLowerCase();
+    var s = String(val).trim().toLowerCase().replace(/,/g, '');
+    var dots = (s.match(/\./g)||[]).length;
+    if (dots > 1) s = s.replace(/\./g, '');
+    else if (dots === 1 && s.split('.')[1].length === 3) s = s.replace('.', '');
     if (s.endsWith('tr')) return parseFloat(s) * 1000000;
     if (s.endsWith('k')) return parseFloat(s) * 1000;
     return parseFloat(s) || 0;
@@ -2904,7 +2907,11 @@ function filterBookingsForBC() {
 
 function parseMoneyNum(val) {
   if (!val) return 0;
-  const s = val.toString().trim().toLowerCase();
+  // Bỏ dấu phẩy và chấm ngăn cách hàng nghìn, giữ lại chấm thập phân
+  var s = val.toString().trim().toLowerCase().replace(/,/g, '');
+  // Bỏ dấu chấm nếu không phải thập phân (vd: 1.000.000 → 1000000)
+  if ((s.match(/\./g)||[]).length > 1) s = s.replace(/\./g, '');
+  else if (s.includes('.') && s.split('.')[1].length === 3) s = s.replace('.', '');
   if (s.endsWith('tr')) return parseFloat(s) * 1000000;
   if (s.endsWith('k')) return parseFloat(s) * 1000;
   return parseFloat(s) || 0;
@@ -3015,10 +3022,12 @@ function renderBaoCao() {
   // Theo đối tác
   const partnerStats = {};
   list.forEach(function(b) {
-    if (b.custType !== 'doitac' || !b.partnerId) return;
-    const key = b.partnerId;
+    if (b.custType !== 'doitac') return;
+    // Dùng partnerId nếu có, fallback về partnerName
+    const key = b.partnerId || b.partnerName || 'unknown';
+    if (!key || key === 'unknown') return;
     if (!partnerStats[key]) {
-      const p = partners.find(function(x){ return x.id === key; });
+      const p = partners.find(function(x){ return x.id === key || x.name === key; });
       partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0 };
     }
     partnerStats[key].count++;
@@ -3029,7 +3038,11 @@ function renderBaoCao() {
 
   if (partnerSel) {
     html += '<div class="bc-section">Theo đối tác</div>';
-    const s = partnerStats[partnerSel];
+    // Tìm theo id hoặc name
+    const selKey = Object.keys(partnerStats).find(function(k){
+      return k === partnerSel || partnerStats[k].name === partners.find(function(p){ return p.id===partnerSel; })?.name;
+    }) || partnerSel;
+    const s = partnerStats[selKey];
     if (s) {
       const net = s.vp - s.cost;
       html += '<div class="bc-room-row">';

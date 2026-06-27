@@ -663,7 +663,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '7.8';
+const APP_VERSION = '7.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -3225,7 +3225,8 @@ function renderBaoCao() {
   const tongTienDiem = diemDaThu + diemChuaThu;
 
   // Doanh số thực thu = Doanh thu VP - Chi phí điều xe + Tiền điểm
-  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem;
+  const tongKhauTru = list.reduce(function(s,b){ return s + calcDeductions(b); }, 0);
+  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem - tongKhauTru;
 
   const dangXuLy = list.filter(function(b){ return b.statusDrive==='processing'; }).length;
   const daDieu = list.filter(function(b){ return b.statusDrive==='done'; }).length;
@@ -3268,10 +3269,11 @@ function renderBaoCao() {
   html += '<div class="bc-card orange"><div class="bc-label">Tiền điểm chưa thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemChuaThu)+'</div></div>';
 
   // Doanh số thực thu
+  if (tongKhauTru > 0) html += '<div class="bc-card orange"><div class="bc-label">Tổng khấu trừ (phí+VAT)</div><div class="bc-value" style="font-size:15px;color:var(--red)">−'+fmtVND(tongKhauTru)+'</div></div>';
   html += '<div class="bc-card full" style="border:1.5px solid var(--gm);background:var(--gl)">'
     + '<div class="bc-label">Doanh số thực thu</div>'
     + '<div class="bc-value" style="font-size:18px;color:var(--gd)">'+fmtVND(doanhSoThucThu)+'</div>'
-    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm</div>'
+    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm'+(tongKhauTru?' − '+fmtVND(tongKhauTru)+' khấu trừ':'')+'</div>'
     + '</div>';
 
   html += '</div>';
@@ -3301,11 +3303,13 @@ function renderBaoCao() {
     if (!key || key === 'unknown') return;
     if (!partnerStats[key]) {
       const p = partners.find(function(x){ return x.id === key || x.name === key; });
-      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0 };
+      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0, deductions:0 };
     }
     partnerStats[key].count++;
     partnerStats[key].vp += parseMoneyNum(b.priceVP);
     partnerStats[key].cost += parseMoneyNum(b.priceDriver);
+    partnerStats[key].diem += calcPointsMoney(b);
+    partnerStats[key].deductions += calcDeductions(b);
     if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseMoneyNum(b.priceVP);
   });
 
@@ -3317,9 +3321,9 @@ function renderBaoCao() {
     }) || partnerSel;
     const s = partnerStats[selKey];
     if (s) {
-      const net = s.vp - s.cost;
+      const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
       html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+'</div></div>';
+      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Điểm '+fmtVND(s.diem):'')+(s.deductions?' &nbsp;•&nbsp; Khấu trừ −'+fmtVND(s.deductions):'')+'</div></div>';
       html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
       html += '<div class="bc-room-detail" style="color:var(--gm)">Lãi gộp '+fmtVND(net)+'</div>';
       if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.2';
+const APP_VERSION = '13.3';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2379,17 +2379,12 @@ function openDetail(id) {
   detailBody.innerHTML = html;
   detailBody.appendChild(extrasCard);
 
-  // Card TIN NHẮN — thu gọn, bấm mở
+  // Card TIN NHẮN
   const card = document.createElement('div');
   card.className = 'card';
-  let msgOpen = false;
-  const msgHead = document.createElement('div');
-  msgHead.className = 'card-head';
-  msgHead.style.cssText = 'cursor:pointer;width:100%;display:flex;align-items:center;justify-content:space-between';
-  msgHead.innerHTML = '<div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div><span style="font-size:11px;color:var(--text3)">▶</span>';
   const msgBody = document.createElement('div');
   msgBody.className = 'card-body';
-  msgBody.style.cssText = 'gap:8px;display:none';
+  msgBody.style.gap = '8px';
 
   // Nút điều xe
   const btnDrv = document.createElement('button');
@@ -2407,14 +2402,6 @@ function openDetail(id) {
 
   msgBody.appendChild(btnDrv);
   msgBody.appendChild(btnCfm);
-
-  msgHead.onclick = function(){
-    msgOpen = !msgOpen;
-    msgBody.style.display = msgOpen ? 'flex' : 'none';
-    msgHead.querySelector('span:last-child').style.transform = msgOpen ? 'rotate(90deg)' : '';
-  };
-
-  card.appendChild(msgHead);
   card.appendChild(msgBody);
   detailBody.appendChild(card);
 

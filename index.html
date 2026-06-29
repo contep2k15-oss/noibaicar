@@ -130,7 +130,7 @@
   .badge.paid{background:#E8F5EE;color:#1A5C38}
 
   /* BOOKING DETAIL */
-  .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg)}
+  .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg);overflow:hidden}
   .detail-overlay.active{display:flex}
   .detail-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
   .detail-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -3552,6 +3552,12 @@ window.addEventListener('beforeunload', function() {
   function fix(){
     var h=(window.visualViewport?window.visualViewport.height:window.innerHeight)+'px';
     document.querySelector('.app').style.height=h;
+    var detailEl=document.querySelector('.detail-overlay');
+    var settingsEl=document.querySelector('.settings-overlay');
+    var menuEl=document.querySelector('.menu-overlay');
+    if(detailEl)detailEl.style.height=h;
+    if(settingsEl)settingsEl.style.height=h;
+    if(menuEl)menuEl.style.height=h;
   }
   fix();
   window.addEventListener('resize',fix);

@@ -133,7 +133,7 @@
   .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg);overflow:hidden}
   .detail-overlay.active{display:flex}
   .detail-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
-  .detail-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .detail-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px}
 
   /* POINTS WIDGET */
   .points-widget{background:white;border-radius:var(--radius);border:.5px solid var(--gb);padding:12px 14px}
@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '12.0';
+const APP_VERSION = '12.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -899,7 +899,7 @@ function showUserForm(idx) {
   const popup = document.createElement('div');
   popup.id = 'user-form-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="font-size:14px;font-weight:600;color:var(--gt)">'+(u?'✏️ Sửa người dùng':'➕ Thêm người dùng')+'</div>'+
     '<div class="field"><label>Tên đăng nhập</label><input type="text" id="uf-username" value="'+(u?u.username:'')+'" placeholder="vd: nhanvien1" '+(u?'readonly':'')+' style="'+(u?'background:var(--gl)':'')+'"</div>'+
     '<div class="field"><label>'+(u?'Mật khẩu mới (để trống = giữ nguyên)':'Mật khẩu')+'</label><input type="password" id="uf-password" placeholder="Nhập mật khẩu" autocomplete="new-password"></div>'+
@@ -1142,7 +1142,7 @@ function showAppsScriptHelp() {
   const popup = document.createElement('div');
   popup.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
   const inner = document.createElement('div');
-  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px';
+  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px';
   inner.innerHTML = '<div style="font-size:14px;font-weight:600;color:var(--gt)">📜 Kết nối Google Sheets</div>'
     + '<ol style="font-size:13px;color:var(--text2);line-height:1.7;padding-left:18px;margin:0">'
     + '<li>Mở một <b>Google Trang tính</b> mới (gõ sheets.new).</li>'
@@ -2214,8 +2214,8 @@ function showPointsPopup(id) {
   });
   const popup = document.createElement('div');
   popup.id = 'points-popup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px">'
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;width:100%';
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--gt);margin-bottom:12px">🏆 Room & Điểm — '+id+'</div>'
     + '<div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:10px">'
     + '<div class="field"><label>Room</label><select id="pp-room" onchange="calcPointsPopup()">'+roomOptions+'</select></div>'
@@ -2472,9 +2472,9 @@ function showMsgPopup(id, type) {
   const textEN = b.confirmEN || '';
   const text = type === 'driver' ? (b.driverMsg||'') : (type === 'confirm_en' ? textEN : textVI);
   const popup = document.createElement('div');
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;width:100%';
   const inner = document.createElement('div');
-  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
+  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
   const head = document.createElement('div');
   head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
   head.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--gt)">'+title+'</span>';
@@ -2907,8 +2907,8 @@ function deleteKH() {
 function showAddKHForm() {
   const popup = document.createElement('div');
   popup.id = 'add-kh-popup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px">'
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;width:100%';
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;display:flex;flex-direction:column;gap:10px">'
     +'<div style="font-size:14px;font-weight:600;color:var(--gt)">🤝 Thêm đối tác</div>'
     +'<div class="field"><label>Tên đối tác *</label><input type="text" id="np-name" placeholder="vd: Booking Agent India"></div>'
     +'<div class="field"><label>SĐT / Zalo</label><input type="text" id="np-phone" placeholder="vd: +91 78372 32383"></div>'
@@ -2927,8 +2927,8 @@ function showEditPartner(id) {
   if (!p) return;
   const popup = document.createElement('div');
   popup.id = 'edit-kh-popup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px">'
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;width:100%';
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;display:flex;flex-direction:column;gap:10px">'
     +'<div style="font-size:14px;font-weight:600;color:var(--gt)">✏️ Sửa đối tác</div>'
     +'<div class="field"><label>Tên đối tác</label><input type="text" id="ep-name" value="'+p.name+'"></div>'
     +'<div class="field"><label>SĐT / Zalo</label><input type="text" id="ep-phone" value="'+(p.phone||'')+'"></div>'
@@ -3042,9 +3042,9 @@ function buildPartnerPopup(title, vals, onSave) {
   if (existing) existing.remove();
   const overlay = document.createElement('div');
   overlay.id = 'partner-settings-popup';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;width:100%';
   const sheet = document.createElement('div');
-  sheet.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
+  sheet.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
 
   const ttl = document.createElement('div');
   ttl.style.cssText = 'font-size:14px;font-weight:600;color:var(--gt)';

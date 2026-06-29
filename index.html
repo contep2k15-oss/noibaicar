@@ -580,6 +580,27 @@
       <button class="btn-save" style="background:var(--blue)" onclick="syncPull()">⬇️ Tải về</button>
     </div>
     <button id="btn-apps-script" class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã Apps Script & hướng dẫn</button>
+    <div class="settings-card" style="margin-top:10px">
+      <div class="settings-row">
+        <div class="settings-label">🔔 Cảnh báo trước</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="tele-alert-hours" min="1" max="48" value="3" onchange="saveTeleConfig()" style="width:60px;padding:5px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);text-align:center">
+          <span style="font-size:13px;color:var(--text2)">giờ</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">Booking mới</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="tele-notify-new" onchange="saveTeleConfig()" checked> Bật
+        </label>
+      </div>
+      <div class="settings-row" style="border-bottom:none">
+        <div class="settings-label">Chưa điều xe</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="tele-notify-unassigned" onchange="saveTeleConfig()" checked> Bật
+        </label>
+      </div>
+    </div>
       </div>
     </div>
 
@@ -663,7 +684,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -986,6 +1007,7 @@ function toggleAcc(id){
   var head = body.previousElementSibling;
   if (head) head.classList.toggle('open', open);
   if (open && id === 'partners') renderPartnerSettings();
+  if (open && id === 'sync') loadTeleConfig();
 }
 function saveSettings() {
   const key = document.getElementById('api-key-input').value.trim();
@@ -1049,6 +1071,26 @@ function saveSheetUrl() {
 }
 // ===== AUTO SYNC =====
 let autoSyncTimer = null;
+function saveTeleConfig() {
+  const hours = parseInt((document.getElementById('tele-alert-hours')||{}).value||3);
+  const notifyNew = document.getElementById('tele-notify-new') ? document.getElementById('tele-notify-new').checked : true;
+  const notifyUnassigned = document.getElementById('tele-notify-unassigned') ? document.getElementById('tele-notify-unassigned').checked : true;
+  const cfg = { alertHours: hours, notifyNew, notifyUnassigned };
+  localStorage.setItem('nbc_tele_config', JSON.stringify(cfg));
+  scheduleAutoSync();
+  showToast('✓ Đã lưu cài đặt Telegram');
+}
+
+function loadTeleConfig() {
+  const cfg = JSON.parse(localStorage.getItem('nbc_tele_config') || '{}');
+  const h = document.getElementById('tele-alert-hours');
+  if (h && cfg.alertHours) h.value = cfg.alertHours;
+  const nn = document.getElementById('tele-notify-new');
+  if (nn && cfg.notifyNew === false) nn.checked = false;
+  const nu = document.getElementById('tele-notify-unassigned');
+  if (nu && cfg.notifyUnassigned === false) nu.checked = false;
+}
+
 function scheduleAutoSync() {
   clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(function() { syncPush(true); }, 4000);
@@ -1066,7 +1108,8 @@ async function syncPush(silent) {
         rooms: rooms,
         partners: partners,
         customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}'),
-        users: JSON.parse(localStorage.getItem('nbc_users') || '[]')
+        users: JSON.parse(localStorage.getItem('nbc_users') || '[]'),
+        teleConfig: JSON.parse(localStorage.getItem('nbc_tele_config') || '{}')
       }),
       redirect:'follow'
     });
@@ -1156,7 +1199,17 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
     writeCustomers(ss, data.customers || {});
     if (data.users && data.users.length) saveUsers(ss, data.users);
     writeBaoCao(ss, data.bookings || [], data.rooms || [], data.partners || []);
-    return jsonOut({ ok: true, count: (data.bookings || []).length });
+    if (data.teleConfig) saveTeleConfigToSheet(ss, data.teleConfig);
+    var bks = data.bookings || [];
+    if (bks.length > 0) {
+      var newest = bks[0];
+      var lastId = PropertiesService.getScriptProperties().getProperty('last_notified_id');
+      if (newest.id && newest.id !== lastId) {
+        notifyNewBooking(newest);
+        PropertiesService.getScriptProperties().setProperty('last_notified_id', newest.id);
+      }
+    }
+    return jsonOut({ ok: true, count: bks.length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
   }
@@ -1338,7 +1391,7 @@ function writeBookings(ss, bookings) {
       b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'',
       (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'',
       b.statusDrive||'', b.statusPay||'', b.statusPoints||'',
-      b.note||'', b.createdAt||''
+      b.note||'', b.createdAt||'', b.pickupTime||''
     ]);
   });
   sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
@@ -1499,6 +1552,75 @@ function writeBaoCao(ss, bookings, rooms, partners) {
     sh.getRange(r+1, 1, 1, 7).setBackground('#E8F5EE').setFontWeight('bold');
   });
   sh.setFrozenRows(0);
+}
+
+
+// ===== TELEGRAM =====
+var TELEGRAM_TOKEN = '7886466527:AAFXhzjiHdEh8TunH4Tl9xk9R1pSyJZ8R4I';
+var TELEGRAM_CHAT_ID = '-1003952844118';
+
+function sendTelegram(msg) {
+  try {
+    UrlFetchApp.fetch('https://api.telegram.org/bot' + TELEGRAM_TOKEN + '/sendMessage', {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg }),
+      muteHttpExceptions: true
+    });
+  } catch(e) {}
+}
+
+function notifyNewBooking(booking) {
+  var nl = '\n';
+  var msg = '[NBC] Dat xe moi: ' + (booking.id||'') + nl
+    + 'Khach: ' + (booking.name||'Khach') + (booking.phone ? ' - ' + booking.phone : '') + nl
+    + 'Ngay don: ' + (booking.date||'--') + nl
+    + 'Lo trinh: ' + (booking.route||'--') + nl
+    + 'Gia VP: ' + (booking.priceVP||'--');
+  sendTelegram(msg);
+}
+
+function checkAndNotify() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var data = loadData(ss);
+    if (!data || !data.bookings) return;
+    var cfg = loadTeleConfigFromSheet(ss);
+    var hours = cfg.alertHours || 3;
+    if (cfg.notifyUnassigned === false) return;
+    var now = new Date();
+    var alerts = [];
+    (data.bookings||[]).forEach(function(b) {
+      if (b.statusDrive !== 'processing' || !b.date) return;
+      try {
+        var ds = b.date;
+        if (ds.indexOf('T') > 0) {
+          var d = new Date(ds);
+          ds = (d.getDate()<10?'0':'')+d.getDate()+'/'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'/'+d.getFullYear();
+        }
+        var p = ds.split('/');
+        if (p.length < 3) return;
+        var bd = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+        var diff = (bd - now) / (1000*60*60);
+        if (diff >= 0 && diff <= hours) {
+          alerts.push('[Chua dieu] ' + (b.id||'') + ' - ' + (b.name||'') + '\\n' + (b.route||'--') + ' - ' + ds);
+        }
+      } catch(e) {}
+    });
+    if (alerts.length) sendTelegram('Canh bao chua dieu xe trong ' + hours + ' gio toi\\n\\n' + alerts.join('\\n\\n'));
+  } catch(err) { sendTelegram('[NBC] Loi: ' + String(err)); }
+}
+
+function saveTeleConfigToSheet(ss, cfg) {
+  var sh = ss.getSheetByName('NBC_CONFIG') || ss.insertSheet('NBC_CONFIG');
+  sh.getRange(2,1).setValue(JSON.stringify(cfg||{}));
+}
+
+function loadTeleConfigFromSheet(ss) {
+  var sh = ss.getSheetByName('NBC_CONFIG');
+  if (!sh || sh.getLastRow() < 2) return {};
+  var val = sh.getRange(2,1).getValue();
+  try { return val ? JSON.parse(val) : {}; } catch(e) { return {}; }
 }
 
 function jsonOut(obj) {
@@ -1726,7 +1848,7 @@ TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM — giờ đón (24h), để trống nếu không có","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
@@ -1927,7 +2049,8 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     createdAt: new Date().toISOString(),
     name: meta.name || 'Khách',
     phone: meta.phone || '',
-    date: meta.date || '',
+    date: fmtDate(meta.date || ''),
+    pickupTime: meta.pickupTime || '',
     route: meta.route || '',
     vehicle: meta.vehicle || '',
     priceDriver: meta.priceDriver || '',
@@ -1938,7 +2061,9 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     isTK: isTK, isCK: isCK,
     statusDrive: 'processing', statusPay: 'unpaid', statusPoints: 'unpending',
     room: '', points: '', pointsAmount: 0,
-    custType: 'le', partnerId: '', partnerName: '', note: ''
+    custType: 'le', partnerId: '', partnerName: '', note: '',
+    extras: [], hasVAT: false,
+    pickupTime: ''
   };
   const isDoiTac = document.getElementById('cb-doi-tac-'+id) && document.getElementById('cb-doi-tac-'+id).checked;
   if (isDoiTac) {
@@ -2039,8 +2164,8 @@ function renderBookings() {
     if (search && !b.phone.includes(search)) return false;
     if (currentFilter === 'chuadieu') return b.statusDrive !== 'done';
     if (currentFilter === 'incomplete') return b.statusDrive !== 'done' || b.statusPay !== 'paid';
-    if (currentFilter === 'today') return b.date === todayStr;
-    if (currentFilter === 'month') return b.date.endsWith(monthStr);
+    if (currentFilter === 'today') return fmtDate(b.date) === todayStr;
+    if (currentFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
     return true;
   });
   const el = document.getElementById('booking-list');
@@ -2059,7 +2184,7 @@ function renderBookings() {
     html += '<div class="booking-name" onclick="openDetail(\''+b.id+'\')">'+b.name+(b.phone?' • '+b.phone:'')+'</div>';
     html += '<div class="booking-route" onclick="openDetail(\''+b.id+'\')">📍 '+(b.route||'—')+'</div>';
     html += '<div class="booking-footer">';
-    html += '<div class="booking-date" onclick="openDetail(\''+b.id+'\')">📅 '+(b.date||'—')+'</div>';
+    html += '<div class="booking-date" onclick="openDetail(\''+b.id+'\')">📅 '+fmtDate(b.date||'', true)+'</div>';
     html += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">';
     html += '<button class="btn-sm" style="font-size:11px;padding:3px 7px;color:var(--gd);border-color:var(--gb)" onclick="showPointsPopup(\''+b.id+'\')">🏆'+(b.points?' '+b.points+'đ':' Điểm')+'</button>';
     html += '<span class="badge '+(b.statusDrive==='done'?'done':'processing')+'" onclick="openDetail(\''+b.id+'\')">'+(b.statusDrive==='done'?'✅ Đã điều':'🚗 Chưa điều')+'</span>';
@@ -2154,9 +2279,13 @@ function openDetail(id) {
   html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
   if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
   if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
-  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+b.date+'</div>';
+  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date, true)+'</div>';
+  html += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)">';
+  html += '⏰ Giờ đón: <input type="text" id="pickup-time-'+id+'" value="'+(b.pickupTime||'')+'" placeholder="VD: 06:00" style="width:80px;padding:4px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit" onchange="savePickupTime(\''+id+'\')">';
+  html += '</div>';
   if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
   if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
+  if (b.pickupTime) html += '<div style="font-size:13px;color:var(--text2)">⏰ Giờ đón: <b>'+b.pickupTime+'</b></div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
@@ -2165,7 +2294,7 @@ function openDetail(id) {
   html += '</div>';
 
   // TRẠNG THÁI
-  html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';
+  html += '<div class="card" style="margin-bottom:10px"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';
   html += '<div class="status-row">';
   html += '<button class="status-btn '+(b.statusDrive==='processing'?'active-processing':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'processing\')">🟡 Đang xử lý</button>';
   html += '<button class="status-btn '+(b.statusDrive==='done'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'done\')">✅ Đã điều</button>';
@@ -2178,13 +2307,155 @@ function openDetail(id) {
   html += '<button class="status-btn '+(b.statusPoints==='collected'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPoints\',\'collected\')">Đã thu điểm</button>';
   html += '</div></div></div>';
 
-  // TIN NHẮN
-  html += '<div class="card"><div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div><div class="card-body" style="gap:8px">';
-  html += '<button class="btn-main" style="background:var(--gt);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'driver\')">🚘 Xem tin điều xe</button>';
-  html += '<button class="btn-main" style="background:var(--blue);font-size:13px;padding:10px" onclick="showMsgPopup(\''+id+'\',\'confirm\')">✅ Xem tin xác nhận VI/EN</button>';
-  html += '</div></div><div class="pb"></div>';
+  // PHÍ PHÁT SINH + VAT card
+  const extras = b.extras || [];
+  const vpNum = parseMoneyNum(b.priceVP);
+  const vatAmt = b.hasVAT ? Math.round(vpNum * 0.92 * 0.20) : 0;
+  const totalExtras = extras.reduce(function(s,e){ return s+(parseFloat(e.amount)||0); }, 0);
+  const totalDeduct = totalExtras + vatAmt;
 
-  document.getElementById('detail-body').innerHTML = html;
+  const extrasCard = document.createElement('div');
+  extrasCard.className = 'card';
+  extrasCard.innerHTML = '<div class="card-head"><div class="card-head-left"><span>➖</span><span>Phí phát sinh & VAT</span></div></div>';
+
+  const extrasBody = document.createElement('div');
+  extrasBody.className = 'card-body';
+  extrasBody.style.gap = '8px';
+
+  // VAT checkbox
+  const vatLabel = document.createElement('label');
+  vatLabel.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer';
+  const vatCb = document.createElement('input');
+  vatCb.type = 'checkbox'; vatCb.id = 'vat-cb-'+id; vatCb.checked = !!b.hasVAT;
+  const vatSpan = document.createElement('span');
+  vatSpan.innerHTML = 'VAT' + (b.hasVAT ? ' <b style="color:var(--red)">−'+vatAmt.toLocaleString('vi-VN')+' VND</b>' : '');
+  vatLabel.appendChild(vatCb); vatLabel.appendChild(vatSpan);
+  extrasBody.appendChild(vatLabel);
+  vatCb.onchange = (function(bid){ return function(){ toggleVAT(bid); }; })(id);
+
+  // Danh sách phí phát sinh
+  extras.forEach(function(e, eIdx) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px';
+    const info = document.createElement('span');
+    info.style.cssText = 'flex:1;color:var(--text2)';
+    info.innerHTML = '− '+(e.note||'Phí phát sinh')+': <b style="color:var(--red)">'+Number(e.amount||0).toLocaleString('vi-VN')+' VND</b>';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-sm'; delBtn.style.cssText = 'background:var(--red);color:white;flex-shrink:0';
+    delBtn.textContent = '✕';
+    delBtn.onclick = (function(bid,idx){ return function(){ removeExtra(bid,idx); }; })(id,eIdx);
+    row.appendChild(info); row.appendChild(delBtn);
+    extrasBody.appendChild(row);
+  });
+
+  // Form thêm phí
+  const formRow = document.createElement('div');
+  formRow.style.cssText = 'display:flex;gap:6px;margin-top:4px';
+  const noteInp = document.createElement('input');
+  noteInp.type='text'; noteInp.id='extra-note-'+id; noteInp.placeholder='Chú thích (VD: Phí cầu đường)';
+  noteInp.style.cssText='flex:2;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
+  const amtInp = document.createElement('input');
+  amtInp.type='number'; amtInp.id='extra-amt-'+id; amtInp.placeholder='Số tiền';
+  amtInp.style.cssText='flex:1;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
+  const addBtn = document.createElement('button');
+  addBtn.className='btn-sm'; addBtn.style.cssText='background:var(--blue);color:white;flex-shrink:0';
+  addBtn.textContent='+ Thêm';
+  addBtn.onclick=(function(bid){ return function(){ addExtra(bid); }; })(id);
+  formRow.appendChild(noteInp); formRow.appendChild(amtInp); formRow.appendChild(addBtn);
+  extrasBody.appendChild(formRow);
+
+  // Tổng khấu trừ
+  if (totalDeduct > 0) {
+    const deductDiv = document.createElement('div');
+    deductDiv.style.cssText='font-size:13px;font-weight:600;color:var(--red);margin-top:4px';
+    deductDiv.textContent='Tổng khấu trừ: −'+totalDeduct.toLocaleString('vi-VN')+' VND';
+    extrasBody.appendChild(deductDiv);
+  }
+
+  extrasCard.appendChild(extrasBody);
+
+  // TIN NHẮN - dùng createElement để tránh lỗi quote
+  const detailBody = document.getElementById('detail-body');
+  detailBody.innerHTML = html;
+  detailBody.appendChild(extrasCard);
+
+  // Card TIN NHẮN
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div>';
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  body.style.gap = '8px';
+
+  // Nút điều xe
+  const btnDrv = document.createElement('button');
+  btnDrv.className = 'btn-main';
+  btnDrv.style.cssText = 'background:var(--gt);font-size:13px;padding:10px';
+  btnDrv.innerHTML = '🚘 Xem tin điều xe';
+  btnDrv.onclick = (function(bid){ return function(){ showMsgPopup(bid,'driver'); }; })(id);
+
+  // Nút xác nhận VI/EN
+  const btnCfm = document.createElement('button');
+  btnCfm.className = 'btn-main';
+  btnCfm.style.cssText = 'background:var(--blue);font-size:13px;padding:10px';
+  btnCfm.innerHTML = '✅ Xem tin xác nhận VI/EN';
+  btnCfm.onclick = (function(bid){ return function(){ showMsgPopup(bid,'confirm'); }; })(id);
+
+  // Divider
+  const div = document.createElement('div');
+  div.style.cssText = 'font-size:11px;color:var(--text3);text-align:center;padding:2px 0';
+  div.textContent = '— Gửi cho khách —';
+
+  // Chọn ngôn ngữ
+  const langSel = document.createElement('select');
+  langSel.id = 'share-lang-' + id;
+  langSel.style.cssText = 'width:100%;padding:8px 10px;border:0.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)';
+  langSel.innerHTML = '<option value="vi">🇻🇳 Tiếng Việt</option><option value="en">🇬🇧 English</option>';
+
+  // Row Zalo + WhatsApp
+  const shareRow = document.createElement('div');
+  shareRow.style.cssText = 'display:flex;gap:8px';
+
+  const btnZalo = document.createElement('button');
+  btnZalo.className = 'btn-main';
+  btnZalo.style.cssText = 'flex:1;background:#0068FF;font-size:13px;padding:9px';
+  btnZalo.innerHTML = '💬 Zalo';
+  btnZalo.onclick = (function(bid){ return function(){
+    const b = bookings.find(function(x){ return x.id===bid; });
+    if (!b) return;
+    const lang = (document.getElementById('share-lang-'+bid)||{}).value||'vi';
+    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
+    const phone = (b.phone||'').replace(/\D/g,'');
+    if (!phone) { showToast('⚠️ Không có số điện thoại'); return; }
+    window.open('https://zalo.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+  }; })(id);
+
+  const btnWA = document.createElement('button');
+  btnWA.className = 'btn-main';
+  btnWA.style.cssText = 'flex:1;background:#25D366;font-size:13px;padding:9px';
+  btnWA.innerHTML = '💬 WhatsApp';
+  btnWA.onclick = (function(bid){ return function(){
+    const b = bookings.find(function(x){ return x.id===bid; });
+    if (!b) return;
+    const lang = (document.getElementById('share-lang-'+bid)||{}).value||'vi';
+    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
+    let phone = (b.phone||'').replace(/\D/g,'');
+    if (phone.startsWith('0')) phone = '84' + phone.substring(1);
+    if (!phone) { showToast('⚠️ Không có số điện thoại'); return; }
+    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+  }; })(id);
+
+  shareRow.appendChild(btnZalo);
+  shareRow.appendChild(btnWA);
+
+  body.appendChild(btnDrv);
+  body.appendChild(btnCfm);
+  body.appendChild(div);
+  body.appendChild(langSel);
+  body.appendChild(shareRow);
+  card.appendChild(body);
+  detailBody.appendChild(card);
+
   document.getElementById('detail-overlay').classList.add('active');
 }
 
@@ -2256,6 +2527,46 @@ function showMsgPopup(id, type) {
 function closeDetail() {
   document.getElementById('detail-overlay').classList.remove('active');
   renderBookings();
+}
+
+function savePickupTime(id) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  b.pickupTime = (document.getElementById('pickup-time-'+id)||{}).value||'';
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+}
+
+function toggleVAT(id) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  b.hasVAT = document.getElementById('vat-cb-'+id).checked;
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  openDetail(id);
+}
+
+function addExtra(id) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  const note = (document.getElementById('extra-note-'+id)||{}).value||'';
+  const amt = parseFloat((document.getElementById('extra-amt-'+id)||{}).value||0);
+  if (!amt || isNaN(amt)) { showToast('⚠️ Vui lòng nhập số tiền'); return; }
+  if (!b.extras) b.extras = [];
+  b.extras.push({ note: note.trim()||'Phí phát sinh', amount: amt });
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  openDetail(id);
+  showToast('✓ Đã thêm phí phát sinh');
+}
+
+function removeExtra(id, idx) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b || !b.extras) return;
+  b.extras.splice(idx, 1);
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  openDetail(id);
 }
 
 function updateStatus(id, field, value) {
@@ -2891,11 +3202,11 @@ function filterBookingsForBC() {
 
   return bookings.filter(function(b) {
     if (bcFilter === 'all') return true;
-    if (bcFilter === 'today') return b.date === todayStr;
-    if (bcFilter === 'month') return b.date.endsWith(monthStr);
+    if (bcFilter === 'today') return fmtDate(b.date) === todayStr;
+    if (bcFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
     if (bcFilter === 'week') {
       if (!b.date) return false;
-      const parts = b.date.split('/');
+      const parts = fmtDate(b.date).split('/');
       if (parts.length < 3) return false;
       const bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
       const diff = (now - bd) / (1000*60*60*24);
@@ -2903,6 +3214,35 @@ function filterBookingsForBC() {
     }
     return true;
   });
+}
+
+function fmtDate(val, showTime) {
+  if (!val) return '—';
+  if (typeof val === 'string' && (val.includes('T') || (val.includes('-') && val.indexOf('-') < 4))) {
+    const d = new Date(val);
+    if (!isNaN(d)) {
+      // Convert to Vietnam timezone (UTC+7)
+      const vnOffset = 7 * 60;
+      const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
+      const vnDate = new Date(utcMs + vnOffset * 60000);
+      const datePart = String(vnDate.getDate()).padStart(2,'0') + '/' +
+                       String(vnDate.getMonth()+1).padStart(2,'0') + '/' +
+                       vnDate.getFullYear();
+      if (showTime) {
+        const timePart = String(vnDate.getHours()).padStart(2,'0') + ':' +
+                         String(vnDate.getMinutes()).padStart(2,'0');
+        return datePart + ' ' + timePart;
+      }
+      return datePart;
+    }
+  }
+  return val;
+}
+
+function calcDeductions(b) {
+  const extras = (b.extras||[]).reduce(function(s,e){ return s+(parseFloat(e.amount)||0); }, 0);
+  const vat = b.hasVAT ? Math.round(parseMoneyNum(b.priceVP) * 0.92 * 0.20) : 0;
+  return extras + vat;
 }
 
 function parseMoneyNum(val) {
@@ -2952,7 +3292,8 @@ function renderBaoCao() {
   const tongTienDiem = diemDaThu + diemChuaThu;
 
   // Doanh số thực thu = Doanh thu VP - Chi phí điều xe + Tiền điểm
-  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem;
+  const tongKhauTru = list.reduce(function(s,b){ return s + calcDeductions(b); }, 0);
+  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem - tongKhauTru;
 
   const dangXuLy = list.filter(function(b){ return b.statusDrive==='processing'; }).length;
   const daDieu = list.filter(function(b){ return b.statusDrive==='done'; }).length;
@@ -2995,10 +3336,11 @@ function renderBaoCao() {
   html += '<div class="bc-card orange"><div class="bc-label">Tiền điểm chưa thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemChuaThu)+'</div></div>';
 
   // Doanh số thực thu
+  if (tongKhauTru > 0) html += '<div class="bc-card orange"><div class="bc-label">Tổng khấu trừ (phí+VAT)</div><div class="bc-value" style="font-size:15px;color:var(--red)">−'+fmtVND(tongKhauTru)+'</div></div>';
   html += '<div class="bc-card full" style="border:1.5px solid var(--gm);background:var(--gl)">'
     + '<div class="bc-label">Doanh số thực thu</div>'
     + '<div class="bc-value" style="font-size:18px;color:var(--gd)">'+fmtVND(doanhSoThucThu)+'</div>'
-    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm</div>'
+    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm'+(tongKhauTru?' − '+fmtVND(tongKhauTru)+' khấu trừ':'')+'</div>'
     + '</div>';
 
   html += '</div>';
@@ -3028,11 +3370,13 @@ function renderBaoCao() {
     if (!key || key === 'unknown') return;
     if (!partnerStats[key]) {
       const p = partners.find(function(x){ return x.id === key || x.name === key; });
-      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0 };
+      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0, deductions:0 };
     }
     partnerStats[key].count++;
     partnerStats[key].vp += parseMoneyNum(b.priceVP);
     partnerStats[key].cost += parseMoneyNum(b.priceDriver);
+    partnerStats[key].diem += calcPointsMoney(b);
+    partnerStats[key].deductions += calcDeductions(b);
     if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseMoneyNum(b.priceVP);
   });
 
@@ -3044,9 +3388,9 @@ function renderBaoCao() {
     }) || partnerSel;
     const s = partnerStats[selKey];
     if (s) {
-      const net = s.vp - s.cost;
+      const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
       html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+'</div></div>';
+      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Điểm '+fmtVND(s.diem):'')+(s.deductions?' &nbsp;•&nbsp; Khấu trừ −'+fmtVND(s.deductions):'')+'</div></div>';
       html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
       html += '<div class="bc-room-detail" style="color:var(--gm)">Lãi gộp '+fmtVND(net)+'</div>';
       if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';

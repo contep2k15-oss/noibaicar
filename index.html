@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '12.6';
+const APP_VERSION = '12.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2294,8 +2294,6 @@ function openDetail(id) {
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
   html += '</div>';
-  if (b.confirmVI) html += '<div style="padding:10px 14px 12px;border-top:.5px solid var(--gl);font-size:13px;white-space:pre-wrap;line-height:1.8;color:var(--text2);overflow-y:visible">'+b.confirmVI+'</div>';
-  html += '</div>';
 
   // TRẠNG THÁI
   html += '<div class="card" style="margin-bottom:10px"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';
@@ -2461,6 +2459,14 @@ function openDetail(id) {
   detailBody.appendChild(card);
 
   document.getElementById('detail-overlay').classList.add('active');
+  requestAnimationFrame(function(){
+    var ov = document.getElementById('detail-overlay');
+    var hdr = ov.querySelector('.detail-header');
+    var db = document.getElementById('detail-body');
+    var h = ov.offsetHeight - hdr.offsetHeight;
+    db.style.height = h + 'px';
+    db.style.maxHeight = h + 'px';
+  });
 }
 
 function showMsgPopup(id, type) {
@@ -2859,6 +2865,12 @@ function openKHDetail(type, idOrData) {
       +'</div>';
   }
   overlay.classList.add('active');
+  requestAnimationFrame(function(){
+    var hdr = overlay.querySelector('.detail-header');
+    var h = overlay.offsetHeight - hdr.offsetHeight;
+    body.style.height = h + 'px';
+    body.style.maxHeight = h + 'px';
+  });
 }
 
 function toggleKHTag(keyEnc, tagEnc) {

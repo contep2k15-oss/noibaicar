@@ -130,10 +130,10 @@
   .badge.paid{background:#E8F5EE;color:#1A5C38}
 
   /* BOOKING DETAIL */
-  .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg);overflow:hidden}
-  .detail-overlay.active{display:flex}
-  .detail-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
-  .detail-body{flex:1;min-height:0;height:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px;will-change:scroll-position}
+  .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;background:var(--bg)}
+  .detail-overlay.active{display:block}
+  .detail-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;height:52px;position:absolute;top:0;left:0;right:0;z-index:1}
+  .detail-body{position:absolute;top:52px;left:0;right:0;bottom:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px}
 
   /* POINTS WIDGET */
   .points-widget{background:white;border-radius:var(--radius);border:.5px solid var(--gb);padding:12px 14px}
@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '12.8';
+const APP_VERSION = '12.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2459,14 +2459,6 @@ function openDetail(id) {
   detailBody.appendChild(card);
 
   document.getElementById('detail-overlay').classList.add('active');
-  requestAnimationFrame(function(){
-    var ov = document.getElementById('detail-overlay');
-    var hdr = ov.querySelector('.detail-header');
-    var db = document.getElementById('detail-body');
-    var h = ov.offsetHeight - hdr.offsetHeight;
-    db.style.height = h + 'px';
-    db.style.maxHeight = h + 'px';
-  });
 }
 
 function showMsgPopup(id, type) {
@@ -2865,12 +2857,6 @@ function openKHDetail(type, idOrData) {
       +'</div>';
   }
   overlay.classList.add('active');
-  requestAnimationFrame(function(){
-    var hdr = overlay.querySelector('.detail-header');
-    var h = overlay.offsetHeight - hdr.offsetHeight;
-    body.style.height = h + 'px';
-    body.style.maxHeight = h + 'px';
-  });
 }
 
 function toggleKHTag(keyEnc, tagEnc) {

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.0';
+const APP_VERSION = '13.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2318,6 +2318,7 @@ function openDetail(id) {
 
   const extrasCard = document.createElement('div');
   extrasCard.className = 'card';
+  extrasCard.style.cssText = 'max-height:160px;overflow-y:auto;';
   extrasCard.innerHTML = '<div class="card-head"><div class="card-head-left"><span>➖</span><span>Phí phát sinh & VAT</span></div></div>';
 
   const extrasBody = document.createElement('div');
@@ -2378,13 +2379,17 @@ function openDetail(id) {
   detailBody.innerHTML = html;
   detailBody.appendChild(extrasCard);
 
-  // Card TIN NHẮN
+  // Card TIN NHẮN — thu gọn, bấm mở
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = '<div class="card-head"><div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div></div>';
-  const body = document.createElement('div');
-  body.className = 'card-body';
-  body.style.gap = '8px';
+  let msgOpen = false;
+  const msgHead = document.createElement('div');
+  msgHead.className = 'card-head';
+  msgHead.style.cssText = 'cursor:pointer';
+  msgHead.innerHTML = '<div class="card-head-left"><span>📨</span><span>Tin nhắn</span></div><span style="font-size:11px;color:var(--text3)">▶</span>';
+  const msgBody = document.createElement('div');
+  msgBody.className = 'card-body';
+  msgBody.style.cssText = 'gap:8px;display:none';
 
   // Nút điều xe
   const btnDrv = document.createElement('button');
@@ -2400,18 +2405,20 @@ function openDetail(id) {
   btnCfm.innerHTML = '✅ Xem tin xác nhận VI/EN';
   btnCfm.onclick = (function(bid){ return function(){ showMsgPopup(bid,'confirm'); }; })(id);
 
-  // Divider
-  const div = document.createElement('div');
-  div.style.cssText = 'font-size:11px;color:var(--text3);text-align:center;padding:2px 0';
-  div.textContent = '— Gửi cho khách —';
+  msgBody.appendChild(btnDrv);
+  msgBody.appendChild(btnCfm);
 
-  // Chọn ngôn ngữ
-  const langSel = document.createElement('select');
-  langSel.id = 'share-lang-' + id;
-  langSel.style.cssText = 'width:100%;padding:8px 10px;border:0.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)';
-  langSel.innerHTML = '<option value="vi">🇻🇳 Tiếng Việt</option><option value="en">🇬🇧 English</option>';
+  msgHead.onclick = function(){
+    msgOpen = !msgOpen;
+    msgBody.style.display = msgOpen ? 'flex' : 'none';
+    msgHead.querySelector('span:last-child').style.transform = msgOpen ? 'rotate(90deg)' : '';
+  };
 
-  // Row Zalo + WhatsApp
+  card.appendChild(msgHead);
+  card.appendChild(msgBody);
+  detailBody.appendChild(card);
+
+  // Zalo + WhatsApp ngoài card
   const shareRow = document.createElement('div');
   shareRow.style.cssText = 'display:flex;gap:8px';
 
@@ -2422,11 +2429,9 @@ function openDetail(id) {
   btnZalo.onclick = (function(bid){ return function(){
     const b = bookings.find(function(x){ return x.id===bid; });
     if (!b) return;
-    const lang = (document.getElementById('share-lang-'+bid)||{}).value||'vi';
-    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
     const phone = (b.phone||'').replace(/\D/g,'');
     if (!phone) { showToast('⚠️ Không có số điện thoại'); return; }
-    window.open('https://zalo.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+    window.open('https://zalo.me/'+phone,'_blank');
   }; })(id);
 
   const btnWA = document.createElement('button');
@@ -2436,24 +2441,15 @@ function openDetail(id) {
   btnWA.onclick = (function(bid){ return function(){
     const b = bookings.find(function(x){ return x.id===bid; });
     if (!b) return;
-    const lang = (document.getElementById('share-lang-'+bid)||{}).value||'vi';
-    const txt = lang==='en' ? (b.confirmEN||'') : (b.confirmVI||'');
     let phone = (b.phone||'').replace(/\D/g,'');
     if (phone.startsWith('0')) phone = '84' + phone.substring(1);
     if (!phone) { showToast('⚠️ Không có số điện thoại'); return; }
-    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+    window.open('https://wa.me/'+phone,'_blank');
   }; })(id);
 
   shareRow.appendChild(btnZalo);
   shareRow.appendChild(btnWA);
-
-  body.appendChild(btnDrv);
-  body.appendChild(btnCfm);
-  body.appendChild(div);
-  body.appendChild(langSel);
-  body.appendChild(shareRow);
-  card.appendChild(body);
-  detailBody.appendChild(card);
+  detailBody.appendChild(shareRow);
 
   document.getElementById('detail-overlay').classList.add('active');
 }

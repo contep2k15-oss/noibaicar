@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '12.9';
+const APP_VERSION = '13.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2324,17 +2324,6 @@ function openDetail(id) {
   extrasBody.className = 'card-body';
   extrasBody.style.gap = '8px';
 
-  // VAT checkbox
-  const vatLabel = document.createElement('label');
-  vatLabel.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer';
-  const vatCb = document.createElement('input');
-  vatCb.type = 'checkbox'; vatCb.id = 'vat-cb-'+id; vatCb.checked = !!b.hasVAT;
-  const vatSpan = document.createElement('span');
-  vatSpan.innerHTML = 'VAT' + (b.hasVAT ? ' <b style="color:var(--red)">−'+vatAmt.toLocaleString('vi-VN')+' VND</b>' : '');
-  vatLabel.appendChild(vatCb); vatLabel.appendChild(vatSpan);
-  extrasBody.appendChild(vatLabel);
-  vatCb.onchange = (function(bid){ return function(){ toggleVAT(bid); }; })(id);
-
   // Danh sách phí phát sinh
   extras.forEach(function(e, eIdx) {
     const row = document.createElement('div');
@@ -2350,20 +2339,28 @@ function openDetail(id) {
     extrasBody.appendChild(row);
   });
 
-  // Form thêm phí
+  // 1 dòng: VAT checkbox + input ghi chú + input số tiền + nút Thêm
   const formRow = document.createElement('div');
-  formRow.style.cssText = 'display:flex;gap:6px;margin-top:4px';
+  formRow.style.cssText = 'display:flex;align-items:center;gap:6px';
+  const vatLabel = document.createElement('label');
+  vatLabel.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;flex-shrink:0;white-space:nowrap';
+  const vatCb = document.createElement('input');
+  vatCb.type = 'checkbox'; vatCb.id = 'vat-cb-'+id; vatCb.checked = !!b.hasVAT;
+  vatCb.onchange = (function(bid){ return function(){ toggleVAT(bid); }; })(id);
+  const vatSpan = document.createElement('span');
+  vatSpan.innerHTML = 'VAT' + (b.hasVAT ? ' <b style="color:var(--red);font-size:11px">−'+vatAmt.toLocaleString('vi-VN')+'</b>' : '');
+  vatLabel.appendChild(vatCb); vatLabel.appendChild(vatSpan);
   const noteInp = document.createElement('input');
-  noteInp.type='text'; noteInp.id='extra-note-'+id; noteInp.placeholder='Chú thích (VD: Phí cầu đường)';
-  noteInp.style.cssText='flex:2;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
+  noteInp.type='text'; noteInp.id='extra-note-'+id; noteInp.placeholder='Chú thích';
+  noteInp.style.cssText='flex:2;padding:6px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
   const amtInp = document.createElement('input');
   amtInp.type='number'; amtInp.id='extra-amt-'+id; amtInp.placeholder='Số tiền';
-  amtInp.style.cssText='flex:1;padding:7px 10px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
+  amtInp.style.cssText='flex:1;min-width:0;padding:6px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:12px;font-family:inherit';
   const addBtn = document.createElement('button');
-  addBtn.className='btn-sm'; addBtn.style.cssText='background:var(--blue);color:white;flex-shrink:0';
-  addBtn.textContent='+ Thêm';
+  addBtn.className='btn-sm'; addBtn.style.cssText='background:var(--blue);color:white;flex-shrink:0;padding:6px 10px';
+  addBtn.textContent='+';
   addBtn.onclick=(function(bid){ return function(){ addExtra(bid); }; })(id);
-  formRow.appendChild(noteInp); formRow.appendChild(amtInp); formRow.appendChild(addBtn);
+  formRow.appendChild(vatLabel); formRow.appendChild(noteInp); formRow.appendChild(amtInp); formRow.appendChild(addBtn);
   extrasBody.appendChild(formRow);
 
   // Tổng khấu trừ

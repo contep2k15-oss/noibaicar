@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Nội Bài Car</title>
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -15,8 +15,8 @@
 <style>
   :root{--gd:#1A5C38;--gm:#2E7D52;--gl:#E8F5EE;--gb:#B7DEC8;--gt:#145230;--bg:#F4F8F5;--white:#fff;--text:#1a1a1a;--text2:#5a7a66;--text3:#9ab5a3;--radius:12px;--radius-sm:8px;--orange:#E07B00;--red:#C0392B;--blue:#1A6FA5}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
-  .app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;background:var(--bg)}
+  html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+  .app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;background:var(--bg);overflow:hidden}
 
   /* HEADER */
   .header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -30,9 +30,9 @@
   .btn-menu:hover{background:rgba(255,255,255,.25)}
   .menu-overlay{display:none;position:fixed;inset:0;z-index:190;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg)}
   .menu-overlay.active{display:flex}
-  .menu-header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .menu-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
   .menu-title{font-size:15px;font-weight:600;color:white}
-  .menu-body{flex:1;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .menu-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:10px}
   .menu-body > *{flex-shrink:0}
   .menu-item{display:flex;align-items:center;gap:14px;padding:16px;background:white;border:.5px solid var(--gb);border-radius:var(--radius);cursor:pointer;text-align:left;width:100%}
   .menu-item:active{background:var(--gl)}
@@ -53,13 +53,13 @@
   .acc-body > *{flex-shrink:0}
 
   /* SCREENS */
-  .screen{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
+  .screen{display:none;flex:1;flex-direction:column;overflow:hidden}
   .screen.active{display:flex}
-  .scroll-body{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   .input-zone{flex-shrink:0;padding:12px 14px;background:var(--bg);border-bottom:0.5px solid var(--gb);display:flex;flex-direction:column;gap:10px}
-  .results-zone{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .results-zone{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .scroll-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
   /* BOOKING SCROLL */
-  #booking-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  #booking-list{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 
   /* CARDS */
   .card{background:var(--white);border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -130,10 +130,10 @@
   .badge.paid{background:#E8F5EE;color:#1A5C38}
 
   /* BOOKING DETAIL */
-  .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg);overflow:hidden}
+  .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg)}
   .detail-overlay.active{display:flex}
-  .detail-header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
-  .detail-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px;height:calc(100vh - 52px)}
+  .detail-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
+  .detail-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
 
   /* POINTS WIDGET */
   .points-widget{background:white;border-radius:var(--radius);border:.5px solid var(--gb);padding:12px 14px}
@@ -141,7 +141,7 @@
   .points-result{margin-top:8px;padding:8px 12px;background:var(--gl);border-radius:var(--radius-sm);font-size:13px;color:var(--gt);font-weight:500}
 
   /* STATUS ROW */
-  .status-row{display:flex;gap:6px;flex-wrap:wrap}
+  .status-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px}
   .status-btn{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .15s}
   .status-btn.active-processing{background:#FFF8E1;color:#E07B00;border-color:#E07B00}
   .status-btn.active-done{background:#E8F5EE;color:#1A5C38;border-color:#1A5C38}
@@ -151,24 +151,23 @@
   .status-btn.inactive{background:white;color:var(--text3);border-color:var(--gb)}
 
   /* FILTER BAR */
-  .filter-bar{display:flex;gap:6px;overflow-x:auto;padding:0 14px 10px;flex-shrink:0}
+  .filter-bar{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 14px 10px;flex-shrink:0;scroll-snap-type:x proximity}
   .filter-bar::-webkit-scrollbar{display:none}
+  .filter-bar .filter-chip{scroll-snap-align:start}
   .filter-chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--gb);background:white;color:var(--text2);white-space:nowrap;transition:all .15s;flex-shrink:0}
   .filter-chip.active{background:var(--gd);color:white;border-color:var(--gd)}
 
-  /* SEARCH */
   .search-bar{padding:10px 14px 0;flex-shrink:0}
   .search-input{position:relative}
   .search-input input{padding-left:34px}
   .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);pointer-events:none}
-
   /* SETTINGS */
   .settings-overlay{display:none;position:fixed;inset:0;z-index:200;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg)}
   .settings-overlay.active{display:flex}
-  .settings-header{background:var(--gd);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .settings-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
   .btn-back{width:32px;height:32px;background:rgba(255,255,255,.15);border:none;border-radius:8px;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .settings-title{font-size:15px;font-weight:600;color:white}
-  .settings-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .settings-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
   .settings-body > *{flex-shrink:0}
   .settings-section{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:4px 0}
   .settings-card{background:white;border-radius:var(--radius);border:.5px solid var(--gb);overflow:hidden}
@@ -684,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -900,7 +899,7 @@ function showUserForm(idx) {
   const popup = document.createElement('div');
   popup.id = 'user-form-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto">'+
+  popup.innerHTML = '<div style="background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="font-size:14px;font-weight:600;color:var(--gt)">'+(u?'✏️ Sửa người dùng':'➕ Thêm người dùng')+'</div>'+
     '<div class="field"><label>Tên đăng nhập</label><input type="text" id="uf-username" value="'+(u?u.username:'')+'" placeholder="vd: nhanvien1" '+(u?'readonly':'')+' style="'+(u?'background:var(--gl)':'')+'"</div>'+
     '<div class="field"><label>'+(u?'Mật khẩu mới (để trống = giữ nguyên)':'Mật khẩu')+'</label><input type="password" id="uf-password" placeholder="Nhập mật khẩu" autocomplete="new-password"></div>'+
@@ -992,6 +991,7 @@ function switchTab(name) {
   if (name === 'booking') renderBookings();
   if (name === 'baocao') renderBaoCao();
   if (name === 'khachhang') { renderKHList(); switchKHTab(khTab); }
+  if (window.fixScrollTops) setTimeout(window.fixScrollTops, 50);
 }
 function showMenu(){ document.getElementById('menu-overlay').classList.add('active'); }
 function hideMenu(){ document.getElementById('menu-overlay').classList.remove('active'); }
@@ -1142,7 +1142,7 @@ function showAppsScriptHelp() {
   const popup = document.createElement('div');
   popup.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
   const inner = document.createElement('div');
-  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;max-height:88vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px';
+  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px';
   inner.innerHTML = '<div style="font-size:14px;font-weight:600;color:var(--gt)">📜 Kết nối Google Sheets</div>'
     + '<ol style="font-size:13px;color:var(--text2);line-height:1.7;padding-left:18px;margin:0">'
     + '<li>Mở một <b>Google Trang tính</b> mới (gõ sheets.new).</li>'
@@ -1292,7 +1292,24 @@ function saveData(ss, payload) {
 function loadData(ss) {
   var result = { bookings: [], rooms: [], partners: [], customers: {} };
 
-  // Đọc Bookings từ NBC_BOOKINGS
+  // Ưu tiên NBC_DATA vì chứa đầy đủ dữ liệu (driverMsg, confirmVI, confirmEN, extras, hasVAT, v.v.)
+  var shD = ss.getSheetByName('NBC_DATA');
+  if (shD && shD.getLastRow() > 0) {
+    var vals = shD.getRange(1, 1, shD.getLastRow(), 1).getValues();
+    var str = vals.map(function(r) { return r[0]; }).join('');
+    if (str) {
+      try {
+        var parsed = JSON.parse(str);
+        if (parsed && parsed.bookings && parsed.bookings.length) {
+          // Đọc users riêng từ NBC_USERS nếu có
+          parsed.users = loadUsers(ss);
+          return parsed;
+        }
+      } catch(e) {}
+    }
+  }
+
+  // Fallback: đọc từ các sheet riêng (NBC_BOOKINGS sẽ thiếu driverMsg/confirmVI/confirmEN)
   var shB = ss.getSheetByName('NBC_BOOKINGS');
   if (shB && shB.getLastRow() > 1) {
     var bRows = shB.getRange(2, 1, shB.getLastRow()-1, 17).getValues();
@@ -1303,7 +1320,8 @@ function loadData(ss) {
         room: r[8]||'', points: r[9]||'',
         custType: r[10]==='Doi tac'?'doitac':'le',
         partnerName: r[11]||'', statusDrive: r[12]||'', statusPay: r[13]||'',
-        statusPoints: r[14]||'', note: r[15]||'', createdAt: r[16]||''
+        statusPoints: r[14]||'', note: r[15]||'', createdAt: r[16]||'',
+        driverMsg: '', confirmVI: '', confirmEN: '', extras: [], hasVAT: false
       };
     });
   }
@@ -1345,16 +1363,6 @@ function loadData(ss) {
 
   // Đọc Users từ NBC_USERS
   result.users = loadUsers(ss);
-
-  // Fallback: nếu tất cả sheet riêng đều rỗng, đọc NBC_DATA
-  if (!result.bookings.length && !result.rooms.length && !result.partners.length) {
-    var shD = ss.getSheetByName('NBC_DATA');
-    if (shD && shD.getLastRow() > 0) {
-      var vals = shD.getRange(1, 1, shD.getLastRow(), 1).getValues();
-      var str = vals.map(function(r) { return r[0]; }).join('');
-      if (str) return JSON.parse(str);
-    }
-  }
 
   return result;
 }
@@ -2280,17 +2288,13 @@ function openDetail(id) {
   if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
   if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
   if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date, true)+'</div>';
-  html += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)">';
-  html += '⏰ Giờ đón: <input type="text" id="pickup-time-'+id+'" value="'+(b.pickupTime||'')+'" placeholder="VD: 06:00" style="width:80px;padding:4px 8px;border:.5px solid var(--gb);border-radius:var(--radius-sm);font-size:13px;font-family:inherit" onchange="savePickupTime(\''+id+'\')">';
-  html += '</div>';
   if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
   if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
-  if (b.pickupTime) html += '<div style="font-size:13px;color:var(--text2)">⏰ Giờ đón: <b>'+b.pickupTime+'</b></div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
   html += '</div>';
-  if (b.confirmVI) html += '<div style="padding:10px 14px 12px;border-top:.5px solid var(--gl);font-size:13px;white-space:pre-wrap;line-height:1.8;color:var(--text2);max-height:200px;overflow-y:auto">'+b.confirmVI+'</div>';
+  if (b.confirmVI) html += '<div style="padding:10px 14px 12px;border-top:.5px solid var(--gl);font-size:13px;white-space:pre-wrap;line-height:1.8;color:var(--text2);overflow-y:visible">'+b.confirmVI+'</div>';
   html += '</div>';
 
   // TRẠNG THÁI
@@ -2470,7 +2474,7 @@ function showMsgPopup(id, type) {
   const popup = document.createElement('div');
   popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
   const inner = document.createElement('div');
-  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;max-height:80vh;overflow-y:auto';
+  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
   const head = document.createElement('div');
   head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
   head.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--gt)">'+title+'</span>';
@@ -3040,7 +3044,7 @@ function buildPartnerPopup(title, vals, onSave) {
   overlay.id = 'partner-settings-popup';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
   const sheet = document.createElement('div');
-  sheet.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto';
+  sheet.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
 
   const ttl = document.createElement('div');
   ttl.style.cssText = 'font-size:14px;font-weight:600;color:var(--gt)';
@@ -3542,6 +3546,17 @@ window.addEventListener('beforeunload', function() {
     navigator.sendBeacon(sheetUrl, payload);
   }
 });
+</script>
+<script>
+(function(){
+  function fix(){
+    var h=(window.visualViewport?window.visualViewport.height:window.innerHeight)+'px';
+    document.querySelector('.app').style.height=h;
+  }
+  fix();
+  window.addEventListener('resize',fix);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',fix);
+})();
 </script>
 </body>
 </html>

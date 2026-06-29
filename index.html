@@ -133,7 +133,7 @@
   .detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;max-width:430px;margin:0 auto;flex-direction:column;background:var(--bg)}
   .detail-overlay.active{display:flex;overflow:hidden}
   .detail-header{background:var(--gd);padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;height:52px}
-  .detail-body{flex:1;min-height:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .detail-body{flex:1;min-height:0;height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px}
 
   /* POINTS WIDGET */
   .points-widget{background:white;border-radius:var(--radius);border:.5px solid var(--gb);padding:12px 14px}
@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '12.3';
+const APP_VERSION = '12.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '14.0';
+const APP_VERSION = '14.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2406,7 +2406,7 @@ function openDetail(id) {
   html += '</div>';
 
   // TRẠNG THÁI
-  html += '<div class="card" style="margin-bottom:10px"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body">';
+  html += '<div class="card" style="margin-bottom:10px"><div class="card-head"><div class="card-head-left"><span>📊</span><span>Trạng thái</span></div></div><div class="card-body" style="max-height:150px;overflow-y:auto">';
   html += '<div class="status-row">';
   html += '<button class="status-btn '+(b.statusDrive==='processing'?'active-processing':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'processing\')">🟡 Đang xử lý</button>';
   html += '<button class="status-btn '+(b.statusDrive==='done'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'done\')">✅ Đã điều</button>';

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.5';
+const APP_VERSION = '13.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1952,7 +1952,7 @@ TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM — giờ đón (24h), để trống nếu không có","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
@@ -1961,6 +1961,10 @@ Trả về JSON object thuần không markdown (1 đơn duy nhất):
   try {
     const raw = await callAPI(prompt);
     const obj = JSON.parse(raw);
+    console.log('=== DEBUG AI RESPONSE ===');
+    console.log('Full meta object:', obj.meta);
+    console.log('pickupTime value:', JSON.stringify(obj.meta && obj.meta.pickupTime));
+    console.log('==========================');
     // Đảm bảo tin điều xe luôn cách dòng đúng
     if (obj.driver) {
       obj.driver = obj.driver
@@ -2148,6 +2152,8 @@ function handleCheckDoiTacDyn(id) {
 
 function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
   const meta = obj.meta || {};
+  console.log('=== DEBUG saveToBookingDyn ===');
+  console.log('meta.pickupTime nhan duoc:', JSON.stringify(meta.pickupTime));
   const booking = {
     id: generateBookingId(),
     createdAt: new Date().toISOString(),
@@ -2604,14 +2610,6 @@ function showMsgPopup(id, type) {
 function closeDetail() {
   document.getElementById('detail-overlay').classList.remove('active');
   renderBookings();
-}
-
-function savePickupTime(id) {
-  const b = bookings.find(function(x){ return x.id===id; });
-  if (!b) return;
-  b.pickupTime = (document.getElementById('pickup-time-'+id)||{}).value||'';
-  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
-  scheduleAutoSync();
 }
 
 function toggleVAT(id) {

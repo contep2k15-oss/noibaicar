@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.4';
+const APP_VERSION = '13.5';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2166,8 +2166,7 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     statusDrive: 'processing', statusPay: 'unpaid', statusPoints: 'unpending',
     room: '', points: '', pointsAmount: 0,
     custType: 'le', partnerId: '', partnerName: '', note: '',
-    extras: [], hasVAT: false,
-    pickupTime: ''
+    extras: [], hasVAT: false
   };
   const isDoiTac = document.getElementById('cb-doi-tac-'+id) && document.getElementById('cb-doi-tac-'+id).checked;
   if (isDoiTac) {

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.3';
+const APP_VERSION = '13.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1201,14 +1201,7 @@ const APPS_SCRIPT_CODE = `function doPost(e) {
     writeBaoCao(ss, data.bookings || [], data.rooms || [], data.partners || []);
     if (data.teleConfig) saveTeleConfigToSheet(ss, data.teleConfig);
     var bks = data.bookings || [];
-    if (bks.length > 0) {
-      var newest = bks[0];
-      var lastId = PropertiesService.getScriptProperties().getProperty('last_notified_id');
-      if (newest.id && newest.id !== lastId) {
-        notifyNewBooking(newest);
-        PropertiesService.getScriptProperties().setProperty('last_notified_id', newest.id);
-      }
-    }
+    notifyAllNewBookings(bks);
     return jsonOut({ ok: true, count: bks.length });
   } catch (err) {
     return jsonOut({ ok: false, error: String(err) });
@@ -1564,15 +1557,25 @@ function writeBaoCao(ss, bookings, rooms, partners) {
 
 
 // ===== TELEGRAM =====
-var TELEGRAM_TOKEN = '7886466527:AAFXhzjiHdEh8TunH4Tl9xk9R1pSyJZ8R4I';
-var TELEGRAM_CHAT_ID = '-1003952844118';
+// Token va Chat ID duoc luu trong Script Properties (File > Project properties > Script properties)
+// KHONG hardcode token o day de tranh lo lot khi chia se code.
+// Key can tao: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+function getTelegramConfig() {
+  var props = PropertiesService.getScriptProperties();
+  return {
+    token: props.getProperty('TELEGRAM_TOKEN') || '',
+    chatId: props.getProperty('TELEGRAM_CHAT_ID') || ''
+  };
+}
 
 function sendTelegram(msg) {
   try {
-    UrlFetchApp.fetch('https://api.telegram.org/bot' + TELEGRAM_TOKEN + '/sendMessage', {
+    var cfg = getTelegramConfig();
+    if (!cfg.token || !cfg.chatId) return;
+    UrlFetchApp.fetch('https://api.telegram.org/bot' + cfg.token + '/sendMessage', {
       method: 'post',
       contentType: 'application/json',
-      payload: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg }),
+      payload: JSON.stringify({ chat_id: cfg.chatId, text: msg }),
       muteHttpExceptions: true
     });
   } catch(e) {}
@@ -1588,6 +1591,71 @@ function notifyNewBooking(booking) {
   sendTelegram(msg);
 }
 
+// So sanh toan bo danh sach booking voi tap ID da tung thong bao (luu trong CacheService/Properties)
+// thay vi chi so sanh phan tu dau mang, tranh bo sot khi co nhieu booking moi cung luc
+// hoac bao nham khi thu tu mang thay doi.
+function notifyAllNewBookings(bks) {
+  try {
+    if (!bks || !bks.length) return;
+    var cfg = loadTeleConfigFromSheet(SpreadsheetApp.getActiveSpreadsheet());
+    if (cfg.notifyNew === false) return;
+
+    var props = PropertiesService.getScriptProperties();
+    var notifiedRaw = props.getProperty('notified_booking_ids') || '[]';
+    var notifiedIds = [];
+    try { notifiedIds = JSON.parse(notifiedRaw); } catch(e) { notifiedIds = []; }
+    var notifiedSet = {};
+    notifiedIds.forEach(function(id){ notifiedSet[id] = true; });
+
+    var newOnes = [];
+    bks.forEach(function(b) {
+      if (b.id && !notifiedSet[b.id]) newOnes.push(b);
+    });
+
+    if (!newOnes.length) return;
+
+    newOnes.forEach(function(b) {
+      notifyNewBooking(b);
+      notifiedSet[b.id] = true;
+    });
+
+    // Gioi han danh sach ID da luu de tranh phinh to qua thoi gian (giu 500 ID gan nhat)
+    var allIds = Object.keys(notifiedSet);
+    if (allIds.length > 500) allIds = allIds.slice(allIds.length - 500);
+    props.setProperty('notified_booking_ids', JSON.stringify(allIds));
+  } catch(err) {
+    sendTelegram('[NBC] Loi notifyAllNewBookings: ' + String(err));
+  }
+}
+
+// Parse ngay dang dd/mm/yyyy hoac ISO (co chu "T"), tra ve null neu khong parse duoc
+// thay vi bo qua am tham bang try/catch rong.
+function parseBookingDate(ds) {
+  if (!ds) return null;
+  try {
+    if (ds.indexOf('T') > 0) {
+      var d = new Date(ds);
+      if (isNaN(d.getTime())) return null;
+      return d;
+    }
+    var p = ds.split('/');
+    if (p.length === 3) {
+      var day = parseInt(p[0], 10), mon = parseInt(p[1], 10), yr = parseInt(p[2], 10);
+      if (!isNaN(day) && !isNaN(mon) && !isNaN(yr)) {
+        var dd = new Date(yr, mon - 1, day);
+        if (!isNaN(dd.getTime())) return dd;
+      }
+      return null;
+    }
+    // Fallback: thu yyyy-mm-dd hoac cac dinh dang ma Date() hieu duoc truc tiep
+    var fallback = new Date(ds);
+    if (!isNaN(fallback.getTime())) return fallback;
+    return null;
+  } catch(e) {
+    return null;
+  }
+}
+
 function checkAndNotify() {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1597,26 +1665,54 @@ function checkAndNotify() {
     var hours = cfg.alertHours || 3;
     if (cfg.notifyUnassigned === false) return;
     var now = new Date();
+
+    // Tap ID da canh bao roi, tranh spam lap lai moi lan trigger chay
+    var props = PropertiesService.getScriptProperties();
+    var alertedRaw = props.getProperty('alerted_unassigned_ids') || '[]';
+    var alertedIds = [];
+    try { alertedIds = JSON.parse(alertedRaw); } catch(e) { alertedIds = []; }
+    var alertedSet = {};
+    alertedIds.forEach(function(id){ alertedSet[id] = true; });
+
     var alerts = [];
+    var stillUnassignedIds = [];
     (data.bookings||[]).forEach(function(b) {
       if (b.statusDrive !== 'processing' || !b.date) return;
-      try {
-        var ds = b.date;
-        if (ds.indexOf('T') > 0) {
-          var d = new Date(ds);
-          ds = (d.getDate()<10?'0':'')+d.getDate()+'/'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'/'+d.getFullYear();
+      var bd = parseBookingDate(b.date);
+      if (!bd) return;
+      var diff = (bd - now) / (1000*60*60);
+      if (diff >= 0 && diff <= hours) {
+        stillUnassignedIds.push(b.id);
+        if (!alertedSet[b.id]) {
+          alerts.push('[Chua dieu] ' + (b.id||'') + ' - ' + (b.name||'') + '\n' + (b.route||'--') + ' - ' + b.date);
         }
-        var p = ds.split('/');
-        if (p.length < 3) return;
-        var bd = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
-        var diff = (bd - now) / (1000*60*60);
-        if (diff >= 0 && diff <= hours) {
-          alerts.push('[Chua dieu] ' + (b.id||'') + ' - ' + (b.name||'') + '\\n' + (b.route||'--') + ' - ' + ds);
-        }
-      } catch(e) {}
+      }
     });
-    if (alerts.length) sendTelegram('Canh bao chua dieu xe trong ' + hours + ' gio toi\\n\\n' + alerts.join('\\n\\n'));
+
+    if (alerts.length) {
+      sendTelegram('Canh bao chua dieu xe trong ' + hours + ' gio toi\n\n' + alerts.join('\n\n'));
+    }
+
+    // Cap nhat tap da canh bao: chi giu lai nhung booking van con trong dien "sap toi/chua dieu"
+    // de neu booking duoc dieu xe roi lai bi huy va quay lai trang thai processing, no se duoc canh bao lai.
+    props.setProperty('alerted_unassigned_ids', JSON.stringify(stillUnassignedIds));
   } catch(err) { sendTelegram('[NBC] Loi: ' + String(err)); }
+}
+
+// Tao trigger time-driven de checkAndNotify tu dong chay dinh ky (moi gio).
+// Goi ham nay 1 LAN DUY NHAT thu cong tu Apps Script Editor (chon ensureCheckAndNotifyTrigger > Run)
+// de kich hoat. Apps Script khong tu tao trigger neu khong co dong code goi ham nay.
+function ensureCheckAndNotifyTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  var exists = triggers.some(function(t) {
+    return t.getHandlerFunction() === 'checkAndNotify';
+  });
+  if (exists) return 'Trigger da ton tai, khong tao them.';
+  ScriptApp.newTrigger('checkAndNotify')
+    .timeBased()
+    .everyHours(1)
+    .create();
+  return 'Da tao trigger checkAndNotify chay moi gio.';
 }
 
 function saveTeleConfigToSheet(ss, cfg) {

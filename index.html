@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.0';
+const APP_VERSION = '15.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2776,18 +2776,25 @@ async function processCar() {
 
   const prompt=`Từ thông tin xe nháp sau, tạo 2 tin nhắn thông tin xe gửi khách.
 QUY TẮC BẮT BUỘC:
+- MẶC ĐỊNH viết hoa chữ cái đầu của MỌI giá trị (Tài xế, Loại xe, Biển số, Màu xe) trong cả car_vi và car_en, trừ khi quy tắc riêng bên dưới có yêu cầu khác.
 - Bất kể tin nháp đầu vào viết các thông tin theo thứ tự nào, ĐẦU RA LUÔN theo ĐÚNG thứ tự cố định: Tài xế → Điện thoại → Loại xe → Biển số → Màu xe (car_vi), Driver → Phone → Car type → License plate → Color (car_en).
 - Dòng nào KHÔNG có thông tin trong tin nháp thì ẨN HẲN dòng đó (không tạo dòng, không để giá trị trống), không thay đổi thứ tự các dòng còn lại.
 - MỖI thông tin XUỐNG MỘT DÒNG RIÊNG (dùng ký tự xuống dòng \\n giữa các dòng trong giá trị JSON), KHÔNG gộp chung trên 1 dòng bằng dấu gạch chéo.
+- TÊN TÀI XẾ: chỉ lấy TÊN RIÊNG cuối cùng trong tên đầy đủ (bỏ họ và tên đệm). Format "Mr [Tên riêng]".
+  + car_vi: giữ nguyên dấu tiếng Việt. VD "Nguyễn Văn Dũng" → "Mr Dũng".
+  + car_en: bỏ hết dấu tiếng Việt (chuyển sang không dấu thuần Việt, vd "Đũng"→"Dung", "Phượng"→"Phuong"). VD "Nguyễn Văn Dũng" → "Mr Dung".
+- LOẠI XE: viết hoa chữ cái đầu mỗi từ. Nếu năm sản xuất trong tin nháp là dưới 2025 thì BỎ năm đó đi (không hiển thị năm); nếu từ 2025 trở lên thì giữ nguyên năm. VD "xpander 2023" → "Xpander". VD "innova 2026" → "Innova 2026".
+- BIỂN SỐ: giữ nguyên định dạng số/chữ như trong tin nháp, chỉ viết hoa phần chữ cái nếu có (không tự ý đổi số).
+- MÀU XE: car_vi ghi tên màu bằng tiếng Việt (vd "Đen", "Trắng", "Bạc"), car_en ghi tên màu bằng tiếng Anh tương ứng (vd "Black", "White", "Silver").
 THÔNG TIN XE: "${carDraft}"
 1. "car_vi" — ví dụ đầy đủ (bỏ dòng nào thiếu dữ liệu):
-Tài xế: ...
+Tài xế: Mr ...
 Điện thoại: ...
 Loại xe: ...
 Biển số: ...
 Màu xe: ...
 2. "car_en" — ví dụ đầy đủ (bỏ dòng nào thiếu dữ liệu):
-Driver: ...
+Driver: Mr ...
 Phone: ...
 Car type: ...
 License plate: ...

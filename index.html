@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '14.9';
+const APP_VERSION = '15.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2774,10 +2774,24 @@ async function processCar() {
   document.getElementById('results-car').style.display='none';
   document.getElementById('empty-state-car').style.display='none';
 
-  const prompt=`Từ thông tin xe nháp sau, tạo 2 tin nhắn thông tin xe gửi khách. Bỏ dòng không có thông tin.
+  const prompt=`Từ thông tin xe nháp sau, tạo 2 tin nhắn thông tin xe gửi khách.
+QUY TẮC BẮT BUỘC:
+- Bất kể tin nháp đầu vào viết các thông tin theo thứ tự nào, ĐẦU RA LUÔN theo ĐÚNG thứ tự cố định: Tài xế → Điện thoại → Loại xe → Biển số → Màu xe (car_vi), Driver → Phone → Car type → License plate → Color (car_en).
+- Dòng nào KHÔNG có thông tin trong tin nháp thì ẨN HẲN dòng đó (không tạo dòng, không để giá trị trống), không thay đổi thứ tự các dòng còn lại.
+- MỖI thông tin XUỐNG MỘT DÒNG RIÊNG (dùng ký tự xuống dòng \\n giữa các dòng trong giá trị JSON), KHÔNG gộp chung trên 1 dòng bằng dấu gạch chéo.
 THÔNG TIN XE: "${carDraft}"
-1. "car_vi": Tài xế/Điện thoại/Loại xe/Biển số/Màu xe
-2. "car_en": Driver/Phone/Car type/License plate/Color
+1. "car_vi" — ví dụ đầy đủ (bỏ dòng nào thiếu dữ liệu):
+Tài xế: ...
+Điện thoại: ...
+Loại xe: ...
+Biển số: ...
+Màu xe: ...
+2. "car_en" — ví dụ đầy đủ (bỏ dòng nào thiếu dữ liệu):
+Driver: ...
+Phone: ...
+Car type: ...
+License plate: ...
+Color: ...
 Trả về JSON thuần: {"car_vi":"...","car_en":"..."}`;
 
   try {

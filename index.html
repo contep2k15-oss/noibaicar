@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '14.7';
+const APP_VERSION = '14.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2486,20 +2486,20 @@ function openDetail(id) {
   card.className = 'card';
   const msgBody = document.createElement('div');
   msgBody.className = 'card-body';
-  msgBody.style.gap = '8px';
+  msgBody.style.cssText = 'display:flex;flex-direction:row;gap:8px';
 
   // Nút điều xe
   const btnDrv = document.createElement('button');
   btnDrv.className = 'btn-main';
-  btnDrv.style.cssText = 'background:var(--gt);font-size:13px;padding:10px';
-  btnDrv.innerHTML = '🚘 Xem tin điều xe';
+  btnDrv.style.cssText = 'background:var(--gt);font-size:13px;padding:10px;flex:1;width:auto';
+  btnDrv.innerHTML = '🚘 Tin điều xe';
   btnDrv.onclick = (function(bid){ return function(){ showMsgPopup(bid,'driver'); }; })(id);
 
   // Nút xác nhận VI/EN
   const btnCfm = document.createElement('button');
   btnCfm.className = 'btn-main';
-  btnCfm.style.cssText = 'background:var(--blue);font-size:13px;padding:10px';
-  btnCfm.innerHTML = '✅ Xem tin xác nhận VI/EN';
+  btnCfm.style.cssText = 'background:var(--blue);font-size:13px;padding:10px;flex:1;width:auto';
+  btnCfm.innerHTML = '✅ Tin xác nhận';
   btnCfm.onclick = (function(bid){ return function(){ showMsgPopup(bid,'confirm'); }; })(id);
 
   msgBody.appendChild(btnDrv);

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '14.4';
+const APP_VERSION = '14.5';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2405,20 +2405,9 @@ function openDetail(id) {
   html += '</div>';
   html += '</div>';
 
-  // TRẠNG THÁI (dạng accordion: bấm tiêu đề để mở/đóng, mặc định thu gọn cho gọn giao diện)
-  html += '<button class="acc-head" style="margin-bottom:10px" onclick="toggleAcc(\'status-'+id+'\')"><span class="acc-icon">📊</span><span class="acc-title">Trạng thái</span><span class="acc-arrow">▶</span></button>';
-  html += '<div class="acc-body" id="acc-status-'+id+'" style="margin-bottom:10px">';
-  html += '<div class="status-row">';
-  html += '<button class="status-btn '+(b.statusDrive==='processing'?'active-processing':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'processing\')">🟡 Đang xử lý</button>';
-  html += '<button class="status-btn '+(b.statusDrive==='done'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusDrive\',\'done\')">✅ Đã điều</button>';
-  html += '</div><div class="status-row">';
-  html += '<button class="status-btn '+(b.statusPay==='unpaid'?'active-unpaid':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPay\',\'unpaid\')">Chưa TT</button>';
-  html += '<button class="status-btn '+(b.statusPay==='deposited'?'active-deposited':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPay\',\'deposited\')">Đã cọc</button>';
-  html += '<button class="status-btn '+(b.statusPay==='paid'?'active-paid':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPay\',\'paid\')">Đã TT</button>';
-  html += '</div><div class="status-row">';
-  html += '<button class="status-btn '+(b.statusPoints==='unpending'?'active-unpaid':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPoints\',\'unpending\')">Chưa thu điểm</button>';
-  html += '<button class="status-btn '+(b.statusPoints==='collected'?'active-done':'inactive')+'" onclick="updateStatus(\''+id+'\',\'statusPoints\',\'collected\')">Đã thu điểm</button>';
-  html += '</div></div>';
+  // TRẠNG THÁI: bấm nút để mở popup nổi (giống "Xem tin điều xe"), tránh bị cắt nội dung
+  // do không gian hẹp, không dùng accordion/scroll tại chỗ nữa.
+  html += '<button class="btn-main" style="background:var(--gt);font-size:13px;padding:10px;margin-bottom:10px" onclick="showStatusPopup(\''+id+'\')">📊 Xem / Sửa trạng thái</button>';
 
 
 
@@ -2552,6 +2541,66 @@ function openDetail(id) {
   detailBody.appendChild(shareRow);
 
   document.getElementById('detail-overlay').classList.add('active');
+}
+
+// Popup nổi cho phần Trạng thái, hoc theo dung cau truc showMsgPopup (Tin dieu xe/Tin xac nhan)
+// de tranh bi cat noi dung do khong gian hep trong trang chi tiet.
+function showStatusPopup(id) {
+  const b = bookings.find(function(x){ return x.id === id; });
+  if (!b) return;
+  const popup = document.createElement('div');
+  popup.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;width:100%';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
+  head.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--gt)">📊 Trạng thái</span>';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn-sm';
+  closeBtn.textContent = '✕ Đóng';
+  closeBtn.onclick = function(){ popup.remove(); };
+  head.appendChild(closeBtn);
+
+  const bodyWrap = document.createElement('div');
+  bodyWrap.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+
+  // Click 1 nut trang thai: dong popup, cap nhat (updateStatus se goi openDetail render lai nen),
+  // roi mo lai popup voi du lieu moi nhat - tranh popup hien thi du lieu cu sau khi nen da doi.
+  function makeRow() { return '<div class="status-row" style="display:flex;gap:6px;flex-wrap:wrap"></div>'; }
+  bodyWrap.innerHTML =
+    makeRow() + makeRow() + makeRow();
+  const rows = bodyWrap.querySelectorAll('.status-row');
+
+  function statusBtn(active, label, field, value) {
+    const btn = document.createElement('button');
+    btn.className = 'status-btn ' + (active ? activeClassFor(field, value) : 'inactive');
+    btn.textContent = label;
+    btn.onclick = function(){
+      popup.remove();
+      updateStatus(id, field, value);
+      showStatusPopup(id);
+    };
+    return btn;
+  }
+  function activeClassFor(field, value) {
+    if (field === 'statusDrive') return value === 'processing' ? 'active-processing' : 'active-done';
+    if (field === 'statusPay') return value === 'unpaid' ? 'active-unpaid' : (value === 'deposited' ? 'active-deposited' : 'active-paid');
+    if (field === 'statusPoints') return value === 'unpending' ? 'active-unpaid' : 'active-done';
+    return '';
+  }
+
+  rows[0].appendChild(statusBtn(b.statusDrive==='processing', '🟡 Đang xử lý', 'statusDrive', 'processing'));
+  rows[0].appendChild(statusBtn(b.statusDrive==='done', '✅ Đã điều', 'statusDrive', 'done'));
+  rows[1].appendChild(statusBtn(b.statusPay==='unpaid', 'Chưa TT', 'statusPay', 'unpaid'));
+  rows[1].appendChild(statusBtn(b.statusPay==='deposited', 'Đã cọc', 'statusPay', 'deposited'));
+  rows[1].appendChild(statusBtn(b.statusPay==='paid', 'Đã TT', 'statusPay', 'paid'));
+  rows[2].appendChild(statusBtn(b.statusPoints==='unpending', 'Chưa thu điểm', 'statusPoints', 'unpending'));
+  rows[2].appendChild(statusBtn(b.statusPoints==='collected', 'Đã thu điểm', 'statusPoints', 'collected'));
+
+  inner.appendChild(head); inner.appendChild(bodyWrap);
+  popup.appendChild(inner);
+  document.body.appendChild(popup);
+  popup.addEventListener('click', function(e){ if (e.target === popup) popup.remove(); });
 }
 
 function showMsgPopup(id, type) {

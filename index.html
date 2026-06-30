@@ -88,6 +88,12 @@
   .check-label{font-size:13px;color:var(--text2);font-weight:500}
   .check-item input[type=checkbox]:checked ~ .check-label{color:var(--gd);font-weight:600}
 
+  /* TRIP TYPE */
+  .trip-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .trip-type-btn{padding:10px 6px;border:1.5px solid var(--gb);border-radius:var(--radius-sm);background:white;color:var(--text2);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
+  .trip-type-btn:hover{border-color:var(--gm)}
+  .trip-type-btn.active{border-color:var(--gd);background:var(--gd);color:white;font-weight:600}
+
   /* BUTTONS */
   .btn-main{width:100%;padding:13px;background:var(--gd);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,transform .1s}
   .btn-main:hover{background:var(--gm)}
@@ -302,6 +308,15 @@
               <span class="check-box"></span>
               <span class="check-label">CK</span>
             </label>
+          </div>
+          <div class="field">
+            <label>Loại hình <span style="color:#e74c3c">*</span></label>
+            <div class="trip-type-row" id="trip-type-row">
+              <button type="button" class="trip-type-btn" data-val="San bay" onclick="selectTripType(this)">✈️ Sân bay</button>
+              <button type="button" class="trip-type-btn" data-val="Di tinh" onclick="selectTripType(this)">🛣️ Đi tỉnh</button>
+              <button type="button" class="trip-type-btn" data-val="City tour" onclick="selectTripType(this)">🏙️ City tour</button>
+              <button type="button" class="trip-type-btn" data-val="Di Tour" onclick="selectTripType(this)">🗺️ Đi Tour</button>
+            </div>
           </div>
         </div>
       </div>
@@ -683,7 +698,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.2';
+const APP_VERSION = '15.3';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1789,6 +1804,18 @@ function handleCheckCK() {
   setTimeout(() => { if (document.getElementById('cb-ck').checked) document.getElementById('cb-tk').checked = false; }, 0);
 }
 
+// ===== TRIP TYPE (Loại hình) =====
+let selectedTripType = '';
+function selectTripType(btnEl) {
+  selectedTripType = btnEl.getAttribute('data-val');
+  document.querySelectorAll('#trip-type-row .trip-type-btn').forEach(function(b){ b.classList.remove('active'); });
+  btnEl.classList.add('active');
+}
+function resetTripType() {
+  selectedTripType = '';
+  document.querySelectorAll('#trip-type-row .trip-type-btn').forEach(function(b){ b.classList.remove('active'); });
+}
+
 // ===== KHÁCH LẺ / ĐỐI TÁC (khi lưu booking) =====
 function handleCheckKhachLe() {
   setTimeout(() => {
@@ -1847,6 +1874,7 @@ async function processAll() {
   const draft = document.getElementById('draft').value.trim();
   if (!draft){ showToast('⚠️ Vui lòng nhập tin nháp'); return; }
   if (!apiKey){ showToast('⚠️ Chưa có API key — vào Cài đặt'); return; }
+  if (!selectedTripType){ showToast('⚠️ Vui lòng chọn Loại hình (Sân bay/Đi tỉnh/City tour/Đi Tour)'); return; }
 
   const priceVP = document.getElementById('price-client').value.trim();
   const bienTen = document.getElementById('cb-bien-ten').checked;
@@ -1880,6 +1908,15 @@ LOẠI XE:
 - Carnival, Limousine, Custin, VF9, Innova, Fortuner, Sedan, SUV... giữ nguyên
 - Tin xác nhận: X4C→"Sedan", X7C→"Xe 7 chỗ"/"7-seater", X16C→"Xe 16 chỗ"/"16-seater", X29C→"Xe 29 chỗ"/"29-seater"
 - Nếu BIỂN TÊN=có → thêm ", biển tên" sau loại xe trong tin điều xe
+
+NHÓM LOẠI XE (vehicleGroup) — tự phân loại theo loại xe nhận diện được trong tin nháp, dùng ĐÚNG MỘT trong các giá trị sau (không tự bịa giá trị khác):
+- "Xe thuong": khi loại xe là X4C, X5C, X7C (hoặc các biến thể viết thường/khoảng trắng tương đương)
+- "VF9": khi loại xe là VF9
+- "Carnival": khi loại xe là Carnival
+- "Limousine": khi loại xe là Limousine
+- "Xe Sang": khi loại xe là Mercedes, BMW, Lexus, Alphard, hoặc các dòng xe sang/đắt tiền tương tự khác
+- "Xe to": khi loại xe là X16C, X29C, X35C, X45C
+- "Xe khac": khi tin nháp KHÔNG ghi rõ loại xe, hoặc loại xe không khớp với bất kỳ nhóm nào ở trên
 
 GIỜ: Tin điều xe: HH:MM (24h). Tin xác nhận VI: thêm buổi (sáng/trưa/chiều/tối). EN: AM/PM 12h.
 
@@ -1954,7 +1991,7 @@ TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","priceDriver":"","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","vehicleGroup":"MỘT trong: Xe thuong | VF9 | Carnival | Limousine | Xe Sang | Xe to | Xe khac — theo quy tắc NHÓM LOẠI XE ở trên","priceDriver":"","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
@@ -2159,6 +2196,8 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     pickupTime: meta.pickupTime || '',
     route: meta.route || '',
     vehicle: meta.vehicle || '',
+    vehicleGroup: meta.vehicleGroup || 'Xe khac',
+    tripType: selectedTripType || '',
     priceDriver: meta.priceDriver || '',
     priceVP: meta.priceVP || '',
     driverMsg: obj.driver || '',

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.1';
+const APP_VERSION = '15.2';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2554,7 +2554,7 @@ function showStatusPopup(id) {
   inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
   const head = document.createElement('div');
   head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
-  head.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--gt)">📊 Trạng thái</span>';
+  head.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--gt)">📊 Trạng thái / Xe</span>';
   const closeBtn = document.createElement('button');
   closeBtn.className = 'btn-sm';
   closeBtn.textContent = '✕ Đóng';
@@ -2596,6 +2596,27 @@ function showStatusPopup(id) {
   rows[1].appendChild(statusBtn(b.statusPay==='paid', 'Đã TT', 'statusPay', 'paid'));
   rows[2].appendChild(statusBtn(b.statusPoints==='unpending', 'Chưa thu điểm', 'statusPoints', 'unpending'));
   rows[2].appendChild(statusBtn(b.statusPoints==='collected', 'Đã thu điểm', 'statusPoints', 'collected'));
+
+  // Khu vuc Thong tin xe: dan thu cong tu tab "Thong tin xe" doc lap, luu nguyen van nhieu dong co nhan
+  const carDivider = document.createElement('div');
+  carDivider.style.cssText = 'border-top:.5px solid var(--gb);margin-top:8px;padding-top:8px';
+  const carLabel = document.createElement('div');
+  carLabel.style.cssText = 'font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px';
+  carLabel.textContent = '🚗 Thông tin xe';
+  const carTextarea = document.createElement('textarea');
+  carTextarea.id = 'car-info-' + id;
+  carTextarea.value = b.carInfo || '';
+  carTextarea.placeholder = 'Dán thông tin xe đã tạo từ tab "Thông tin xe" vào đây...';
+  carTextarea.style.cssText = 'width:100%;min-height:110px;padding:8px 10px;font-size:13px;border:1.5px solid var(--gb);border-radius:8px;resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box';
+  const carSaveBtn = document.createElement('button');
+  carSaveBtn.className = 'btn-main';
+  carSaveBtn.style.cssText = 'margin-top:8px;background:var(--gt);font-size:13px;padding:9px';
+  carSaveBtn.textContent = '💾 Lưu thông tin xe';
+  carSaveBtn.onclick = function(){ saveCarInfo(id, carTextarea.value); popup.remove(); showStatusPopup(id); };
+  carDivider.appendChild(carLabel);
+  carDivider.appendChild(carTextarea);
+  carDivider.appendChild(carSaveBtn);
+  bodyWrap.appendChild(carDivider);
 
   inner.appendChild(head); inner.appendChild(bodyWrap);
   popup.appendChild(inner);
@@ -2693,6 +2714,18 @@ function updateAlertHours(id) {
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   showToast(b.alertHoursOverride !== null ? ('✓ Cảnh báo trước ' + b.alertHoursOverride + ' giờ') : '✓ Dùng cấu hình mặc định');
+}
+
+// Luu thong tin xe (dan thu cong tu tab "Thong tin xe" doc lap) vao booking.
+// Luu nguyen van nhieu dong co nhan tren app; Apps Script se tu convert sang dang gop bang dau ";"
+// khi dong bo len Google Sheet.
+function saveCarInfo(id, value) {
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  b.carInfo = (value || '').trim();
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  showToast(b.carInfo ? '✓ Đã lưu thông tin xe' : '✓ Đã xoá thông tin xe');
 }
 
 function addExtra(id) {

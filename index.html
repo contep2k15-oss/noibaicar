@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.7';
+const APP_VERSION = '13.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1901,7 +1901,9 @@ LOẠI CHUYẾN — nhận diện theo hướng lộ trình, không phụ thuộ
 
 NGÀY ĐÓN: Nếu tin nháp có ngày cụ thể → dùng ngày đó. Nếu không có ngày → dùng ngày hôm nay (${today}).
 
-"quay đầu/quay về": tin điều xe thêm (~HH:MM quay đầu) cuối dòng lộ trình.
+"quay đầu/quay về": nếu tin nháp có ghi rõ giờ quay đầu cụ thể (vd "17h quay đầu") thì giữ nguyên giờ đó trong tin điều xe. KHÔNG tự ước lượng/suy đoán giờ quay đầu nếu tin nháp không nói rõ.
+
+CHUYẾN 2 CHIỀU/KHỨ HỒI: Khi tin nháp có "2 chiều", "khứ hồi", hoặc "đi rồi về [điểm]" — đây LUÔN có 2 điểm trả: điểm trả của chặng đi (vd sân bay) VÀ điểm về sau khi quay đầu. PHẢI điền cả hai vào tin xác nhận: "• Điểm trả" = điểm chặng đi, "• Điểm trả 2" = điểm quay về. Không được bỏ sót Điểm trả 2 trong trường hợp này.
 
 === FORMAT TIN XÁC NHẬN ===
 VI — bắt đầu bằng:
@@ -2382,7 +2384,8 @@ function openDetail(id) {
   html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
   if (b.confirmVI) {
     // Dung noi dung Tin xac nhan day du (gio don, diem don/tra/tra 2 tach dong) thay vi route rut gon
-    html += '<div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.7">'+escapeHtml(stripConfirmHeader(b.confirmVI))+'</div>';
+    // Bo dong Gia dich vu vi da co dong Gia VP rieng phia duoi
+    html += '<div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.7">'+escapeHtml(stripPriceLine(stripConfirmHeader(b.confirmVI)))+'</div>';
   } else {
     // Du phong cho booking cu chua co confirmVI
     if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
@@ -3319,6 +3322,13 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// Bo dong "• Giá dịch vụ: ..." khoi confirmVI khi hien thi trong card Thong tin booking,
+// vi card da co dong "💰 Giá VP" rieng o phan quan ly noi bo, giu nguyen trong tin xac nhan/Telegram.
+function stripPriceLine(text) {
+  if (!text) return text;
+  return text.replace(/^•\s*Giá dịch vụ:.*$/m, '').replace(/\n{2,}/g, '\n').trim();
 }
 
 function stripConfirmHeader(text) {

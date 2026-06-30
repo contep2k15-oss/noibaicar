@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '14.8';
+const APP_VERSION = '14.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2378,7 +2378,7 @@ function openDetail(id) {
   let html = '';
 
   // THÔNG TIN BOOKING
-  html += '<div class="card">';
+  html += '<div class="card" style="max-height:280px;overflow-y:scroll">';
   html += '<div class="card-head"><div class="card-head-left"><span>📋</span><span>Thông tin booking</span></div>';
   html += '<button class="btn-sm" onclick="copyText(\''+id+'\',\'confirm\')">📋 Copy</button></div>';
   html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';

@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '13.6';
+const APP_VERSION = '13.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1961,10 +1961,6 @@ Trả về JSON object thuần không markdown (1 đơn duy nhất):
   try {
     const raw = await callAPI(prompt);
     const obj = JSON.parse(raw);
-    console.log('=== DEBUG AI RESPONSE ===');
-    console.log('Full meta object:', obj.meta);
-    console.log('pickupTime value:', JSON.stringify(obj.meta && obj.meta.pickupTime));
-    console.log('==========================');
     // Đảm bảo tin điều xe luôn cách dòng đúng
     if (obj.driver) {
       obj.driver = obj.driver
@@ -2152,11 +2148,9 @@ function handleCheckDoiTacDyn(id) {
 
 function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
   const meta = obj.meta || {};
-  console.log('=== DEBUG saveToBookingDyn ===');
-  console.log('meta.pickupTime nhan duoc:', JSON.stringify(meta.pickupTime));
   const booking = {
     id: generateBookingId(),
-    createdAt: new Date().toISOString(),
+    createdAt: createdAtNow(),
     name: meta.name || 'Khách',
     phone: meta.phone || '',
     date: fmtDate(meta.date || ''),
@@ -2207,7 +2201,7 @@ function saveToBooking() {
   if (!lastProcessed){ showToast('⚠️ Chưa có dữ liệu để lưu'); return; }
   const booking = {
     id: generateBookingId(),
-    createdAt: new Date().toISOString(),
+    createdAt: createdAtNow(),
     name: lastProcessed.name || 'Khách',
     phone: lastProcessed.phone || '',
     date: lastProcessed.date || '',
@@ -2386,11 +2380,18 @@ function openDetail(id) {
   html += '<div class="card-head"><div class="card-head-left"><span>📋</span><span>Thông tin booking</span></div>';
   html += '<button class="btn-sm" onclick="copyText(\''+id+'\',\'confirm\')">📋 Copy</button></div>';
   html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
-  if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
-  if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
-  if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date, true)+'</div>';
-  if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
-  if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
+  if (b.confirmVI) {
+    // Dung noi dung Tin xac nhan day du (gio don, diem don/tra/tra 2 tach dong) thay vi route rut gon
+    html += '<div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.7">'+escapeHtml(stripConfirmHeader(b.confirmVI))+'</div>';
+  } else {
+    // Du phong cho booking cu chua co confirmVI
+    if (b.name)    html += '<div style="font-size:14px;font-weight:600;color:var(--text)">👤 '+b.name+'</div>';
+    if (b.phone)   html += '<div style="font-size:13px;color:var(--text2)">📞 '+b.phone+'</div>';
+    if (b.date)    html += '<div style="font-size:13px;color:var(--text2)">📅 '+fmtDate(b.date, true)+(b.pickupTime?(' '+b.pickupTime):'')+'</div>';
+    if (b.route)   html += '<div style="font-size:13px;color:var(--text2)">📍 '+b.route+'</div>';
+    if (b.vehicle) html += '<div style="font-size:13px;color:var(--text2)">🚗 '+b.vehicle+'</div>';
+  }
+  html += '<div style="border-top:.5px solid var(--gb);margin-top:4px;padding-top:6px"></div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
@@ -3291,6 +3292,40 @@ function filterBookingsForBC() {
   });
 }
 
+// Tra ve thoi gian hien tai dang "DD/MM/YYYY HH:mm" theo gio Viet Nam (UTC+7),
+// dung de luu vao b.createdAt thay vi ISO string UTC kho doc tren Google Sheet.
+function createdAtNow() {
+  const now = new Date();
+  const vnOffset = 7 * 60;
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const vn = new Date(utcMs + vnOffset * 60000);
+  const datePart = String(vn.getDate()).padStart(2,'0') + '/' +
+                   String(vn.getMonth()+1).padStart(2,'0') + '/' +
+                   vn.getFullYear();
+  const timePart = String(vn.getHours()).padStart(2,'0') + ':' +
+                    String(vn.getMinutes()).padStart(2,'0');
+  return datePart + ' ' + timePart;
+}
+
+// Bo dong tieu de "Xac nhan Booking:" khoi confirmVI khi hien thi trong card
+// Thong tin booking (card da co tieu de rieng), giu nguyen trong popup Tin xac nhan.
+// Escape ky tu dac biet truoc khi chen text tu do (vd confirmVI) vao HTML,
+// tranh vo bo cuc hoac loi XSS neu dia chi/ghi chu chua ky tu < > & " '
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function stripConfirmHeader(text) {
+  if (!text) return text;
+  return text.replace(/^Xác nhận Booking:\s*\n+/, '').trim();
+}
+
 function fmtDate(val, showTime) {
   if (!val) return '—';
   if (typeof val === 'string' && (val.includes('T') || (val.includes('-') && val.indexOf('-') < 4))) {
@@ -3606,13 +3641,18 @@ function checkForUpdate() {
 }
 
 // Auto-push dữ liệu khi đóng/reload trang
+// Luu y: navigator.sendBeacon KHONG theo duoc redirect 302 cua Apps Script /exec URL,
+// nen request nay se luon bao 404 trong console (vo hai, day la han che cua trinh duyet,
+// khong phai loi server). Du lieu van duoc dam bao qua scheduleAutoSync() goi fetch() thuong xuyen.
 window.addEventListener('beforeunload', function() {
   if (typeof sheetUrl !== 'undefined' && sheetUrl) {
     const payload = JSON.stringify({
       bookings: typeof bookings !== 'undefined' ? bookings : [],
       rooms: typeof rooms !== 'undefined' ? rooms : [],
       partners: typeof partners !== 'undefined' ? partners : [],
-      customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}')
+      customers: JSON.parse(localStorage.getItem('nbc_customers') || '{}'),
+      users: JSON.parse(localStorage.getItem('nbc_users') || '[]'),
+      teleConfig: JSON.parse(localStorage.getItem('nbc_tele_config') || '{}')
     });
     navigator.sendBeacon(sheetUrl, payload);
   }

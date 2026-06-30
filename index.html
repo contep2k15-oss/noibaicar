@@ -683,7 +683,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '14.6';
+const APP_VERSION = '14.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2402,7 +2402,6 @@ function openDetail(id) {
   html += '<span style="font-size:13px;color:var(--text2)">⏰ Cảnh báo trước:</span>';
   html += '<input type="number" min="0" step="0.5" placeholder="Mặc định" value="'+(b.alertHoursOverride!=null?b.alertHoursOverride:'')+'" style="width:80px;padding:4px 8px;font-size:13px" id="alert-hours-'+id+'" onchange="updateAlertHours(\''+id+'\')">';
   html += '<span style="font-size:13px;color:var(--text2)">giờ</span>';
-  html += '</div>';
   html += '</div>';
   html += '</div>';
 

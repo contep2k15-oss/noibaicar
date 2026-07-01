@@ -759,8 +759,13 @@
       <button class="btn-save" onclick="syncPush()">⬆️ Đẩy lên</button>
       <button class="btn-save" style="background:var(--blue)" onclick="syncPull()">⬇️ Tải về</button>
     </div>
-    <button id="btn-apps-script" class="btn-sm" style="margin-top:8px;width:100%;padding:9px;display:none" onclick="showAppsScriptHelp()">📜 Xem mã Apps Script & hướng dẫn</button>
-    <div class="settings-card" style="margin-top:10px">
+      </div>
+    </div>
+
+    <div class="settings-group" id="settings-telegram-group">
+      <button class="acc-head" onclick="toggleAcc('telegram')"><span class="acc-icon">🔔</span><span class="acc-title">Nhắc lịch Telegram</span><span class="acc-arrow">▶</span></button>
+      <div class="acc-body" id="acc-telegram">
+    <div class="settings-card">
       <div class="settings-row">
         <div class="settings-label">🔔 Cảnh báo trước</div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -864,11 +869,11 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.1';
+const APP_VERSION = '16.2';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
-const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-data','settings-partners'];
+const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-telegram','settings-data','settings-partners'];
 const BOOKING_FEATURES = ['booking-edit-points','booking-points-status','booking-delete'];
 
 function getUsers() {
@@ -983,6 +988,7 @@ function initApp() {
   const settingsFeatureMap = {
     'settings-rooms': 'settings-room-group',
     'settings-sync': 'settings-sync-group',
+    'settings-telegram': 'settings-telegram-group',
     'settings-data': 'settings-data-group',
     'settings-partners': 'settings-partners-group'
   };
@@ -996,8 +1002,6 @@ function initApp() {
   // Hide API group for non-admin too (admin-only)
   const apiGroupEl = document.getElementById('settings-api-group');
   if (apiGroupEl) apiGroupEl.style.display = isAdmin ? '' : 'none';
-  var apsBtnEl = document.getElementById('btn-apps-script');
-  if (apsBtnEl) apsBtnEl.style.display = isAdmin ? '' : 'none';
   // Tab Phiên bản hiện cho tất cả user
   const versionGroupEl = document.getElementById('settings-version-group');
   if (versionGroupEl) versionGroupEl.style.display = '';
@@ -1042,7 +1046,7 @@ function renderUserSettings() {
     el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Chưa có người dùng nào</div>';
     return;
   }
-  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-data':'Dữ liệu / Xuất Excel','settings-partners':'Quản lý Đối tác','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking'};
+  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-telegram':'Nhắc lịch Telegram','settings-data':'Dữ liệu / Xuất Excel','settings-partners':'Quản lý Đối tác','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking'};
   el.innerHTML = users.map(function(u,i){
     const fLabels = (u.features||[]).map(function(f){ return featureLabels[f]||f; }).join(', ') || 'Không có quyền';
     return '<div class="room-item">'+
@@ -1068,7 +1072,7 @@ function showEditUserForm(idx) {
 function showUserForm(idx) {
   const users = getUsers();
   const u = idx !== null ? users[idx] : null;
-  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-data':'💾 Dữ liệu / Xuất Excel','settings-partners':'🤝 Quản lý Đối tác','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking'};
+  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-telegram':'🔔 Nhắc lịch Telegram','settings-data':'💾 Dữ liệu / Xuất Excel','settings-partners':'🤝 Quản lý Đối tác','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking'};
   const allFeaturesToShow = ALL_FEATURES.concat(SETTINGS_FEATURES).concat(BOOKING_FEATURES);
   const checkboxes = allFeaturesToShow.map(function(f){
     const checked = u && (u.features||[]).includes(f) ? 'checked' : '';
@@ -1193,7 +1197,7 @@ function toggleAcc(id){
   var head = body.previousElementSibling;
   if (head) head.classList.toggle('open', open);
   if (open && id === 'partners') renderPartnerSettings();
-  if (open && id === 'sync') loadTeleConfig();
+  if (open && id === 'telegram') loadTeleConfig();
 }
 function saveSettings() {
   const key = document.getElementById('api-key-input').value.trim();
@@ -1324,599 +1328,6 @@ async function syncPull(silent) {
     if (!silent) showToast('✓ Đã tải về (' + bookings.length + ' booking)');
   } catch(e){ if (!silent) showToast('❌ Lỗi kết nối: ' + e.message); }
 }
-function showAppsScriptHelp() {
-  const popup = document.createElement('div');
-  popup.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;max-width:430px;margin:0 auto';
-  const inner = document.createElement('div');
-  inner.style.cssText = 'background:white;border-radius:16px 16px 0 0;width:100%;max-width:430px;padding:16px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px';
-  inner.innerHTML = '<div style="font-size:14px;font-weight:600;color:var(--gt)">📜 Kết nối Google Sheets</div>'
-    + '<ol style="font-size:13px;color:var(--text2);line-height:1.7;padding-left:18px;margin:0">'
-    + '<li>Mở một <b>Google Trang tính</b> mới (gõ sheets.new).</li>'
-    + '<li>Menu <b>Tiện ích mở rộng → Apps Script</b>.</li>'
-    + '<li>Xoá hết code mẫu, bấm <b>📋 Sao chép mã</b> bên dưới rồi dán vào.</li>'
-    + '<li>Bấm <b>Triển khai → Tùy chọn triển khai mới → Ứng dụng web</b>.</li>'
-    + '<li>Phần <b>Người có quyền truy cập</b> chọn <b>Bất kỳ ai</b> → <b>Triển khai</b> → cấp quyền.</li>'
-    + '<li>Sao chép <b>URL ứng dụng web</b> (kết thúc <b>/exec</b>), dán vào ô link trong app rồi bấm Lưu.</li>'
-    + '<li>Bấm <b>⬆️ Đẩy lên</b> để gửi dữ liệu lần đầu.</li>'
-    + '</ol>';
-  const ta = document.createElement('textarea');
-  ta.readOnly = true;
-  ta.style.cssText = 'width:100%;height:170px;font-family:monospace;font-size:11px;border:1px solid var(--gb);border-radius:8px;padding:8px;white-space:pre;color:var(--text)';
-  ta.value = APPS_SCRIPT_CODE;
-  const row = document.createElement('div');
-  row.style.cssText = 'display:flex;gap:8px';
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn-save';
-  copyBtn.textContent = '📋 Sao chép mã';
-  copyBtn.onclick = function(){ navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(function(){ showToast('✓ Đã sao chép mã'); }); };
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'btn-save';
-  closeBtn.style.background = 'var(--text3)';
-  closeBtn.textContent = 'Đóng';
-  closeBtn.onclick = function(){ popup.remove(); };
-  row.appendChild(copyBtn); row.appendChild(closeBtn);
-  inner.appendChild(ta); inner.appendChild(row);
-  popup.appendChild(inner);
-  document.body.appendChild(popup);
-  popup.addEventListener('click', function(e){ if (e.target === popup) popup.remove(); });
-}
-
-const APPS_SCRIPT_CODE = `function doPost(e) {
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var action = (e && e.parameter && e.parameter.action) || data.action || '';
-    if (action === 'saveUsers') {
-      saveUsers(ss, data.users || []);
-      return jsonOut({ ok: true });
-    }
-    saveData(ss, {
-      bookings: data.bookings || [],
-      rooms: data.rooms || [],
-      partners: data.partners || [],
-      customers: data.customers || {}
-    });
-    writeBookings(ss, data.bookings || []);
-    // Xoá sheet Bookings cũ nếu còn tồn tại
-    var oldSh = ss.getSheetByName('Bookings');
-    if (oldSh) ss.deleteSheet(oldSh);
-    writeRooms(ss, data.rooms || []);
-    writePartners(ss, data.partners || []);
-    writeCustomers(ss, data.customers || {});
-    if (data.users && data.users.length) saveUsers(ss, data.users);
-    writeBaoCao(ss, data.bookings || [], data.rooms || [], data.partners || []);
-    if (data.teleConfig) saveTeleConfigToSheet(ss, data.teleConfig);
-    var bks = data.bookings || [];
-    notifyAllNewBookings(bks);
-    return jsonOut({ ok: true, count: bks.length });
-  } catch (err) {
-    return jsonOut({ ok: false, error: String(err) });
-  }
-}
-
-function doGet(e) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var params = e && e.parameter ? e.parameter : {};
-    if (params.action === 'getUsers') {
-      return jsonOut({ ok: true, users: loadUsers(ss) });
-    }
-    if (params.action === 'saveUsers' && params.users) {
-      saveUsers(ss, JSON.parse(params.users));
-      return jsonOut({ ok: true });
-    }
-    if (params.action === 'saveApiKey' && params.apikey) {
-      saveApiKey(ss, params.apikey);
-      return jsonOut({ ok: true });
-    }
-    if (params.action === 'getApiKey') {
-      return jsonOut({ ok: true, apikey: loadApiKey(ss) });
-    }
-    var parsed = loadData(ss) || { bookings: [], rooms: [], partners: [], customers: {} };
-    parsed.ok = true;
-    return jsonOut(parsed);
-  } catch (err) {
-    return jsonOut({ ok: false, error: String(err) });
-  }
-}
-
-function saveApiKey(ss, key) {
-  var sh = ss.getSheetByName('NBC_CONFIG') || ss.insertSheet('NBC_CONFIG');
-  sh.getRange(1,1).setValue(key);
-}
-
-function loadApiKey(ss) {
-  var sh = ss.getSheetByName('NBC_CONFIG');
-  if (!sh || sh.getLastRow() < 1) return '';
-  return sh.getRange(1,1).getValue() || '';
-}
-
-function saveUsers(ss, users) {
-  var sh = ss.getSheetByName('NBC_USERS') || ss.insertSheet('NBC_USERS');
-  sh.clearContents();
-  var headers = ['Username', 'Password', 'Features'];
-  var rows = [headers];
-  (users || []).forEach(function(u) {
-    rows.push([u.username||'', u.password||'', (u.features||[]).join(',')]);
-  });
-  sh.getRange(1, 1, rows.length, 3).setValues(rows);
-  var hr = sh.getRange(1, 1, 1, 3);
-  hr.setBackground('#1A5C38'); hr.setFontColor('#FFFFFF'); hr.setFontWeight('bold');
-  sh.setFrozenRows(1);
-}
-
-function loadUsers(ss) {
-  var sh = ss.getSheetByName('NBC_USERS');
-  if (!sh || sh.getLastRow() < 2) return [];
-  var rows = sh.getRange(2, 1, sh.getLastRow()-1, 3).getValues();
-  return rows.filter(function(r){ return r[0]; }).map(function(r) {
-    return {
-      username: r[0]||'',
-      password: r[1]||'',
-      features: r[2] ? r[2].split(',').filter(Boolean) : []
-    };
-  });
-}
-
-function saveData(ss, payload) {
-  var sh = ss.getSheetByName('NBC_DATA') || ss.insertSheet('NBC_DATA');
-  sh.clearContents();
-  var str = JSON.stringify(payload);
-  var size = 45000, chunks = [];
-  for (var i = 0; i < str.length; i += size) chunks.push([str.substr(i, size)]);
-  if (!chunks.length) chunks = [['']];
-  sh.getRange(1, 1, chunks.length, 1).setValues(chunks);
-}
-
-function loadData(ss) {
-  var result = { bookings: [], rooms: [], partners: [], customers: {} };
-
-  // Ưu tiên NBC_DATA vì chứa đầy đủ dữ liệu (driverMsg, confirmVI, confirmEN, extras, hasVAT, v.v.)
-  var shD = ss.getSheetByName('NBC_DATA');
-  if (shD && shD.getLastRow() > 0) {
-    var vals = shD.getRange(1, 1, shD.getLastRow(), 1).getValues();
-    var str = vals.map(function(r) { return r[0]; }).join('');
-    if (str) {
-      try {
-        var parsed = JSON.parse(str);
-        if (parsed && parsed.bookings && parsed.bookings.length) {
-          // Đọc users riêng từ NBC_USERS nếu có
-          parsed.users = loadUsers(ss);
-          return parsed;
-        }
-      } catch(e) {}
-    }
-  }
-
-  // Fallback: đọc từ các sheet riêng (NBC_BOOKINGS sẽ thiếu driverMsg/confirmVI/confirmEN)
-  var shB = ss.getSheetByName('NBC_BOOKINGS');
-  if (shB && shB.getLastRow() > 1) {
-    var bRows = shB.getRange(2, 1, shB.getLastRow()-1, 17).getValues();
-    result.bookings = bRows.filter(function(r){ return r[0]; }).map(function(r) {
-      return {
-        id: r[0]||'', name: r[1]||'', phone: r[2]||'', date: r[3]||'',
-        route: r[4]||'', vehicle: r[5]||'', priceDriver: r[6]||'', priceVP: r[7]||'',
-        room: r[8]||'', points: r[9]||'',
-        custType: r[10]==='Doi tac'?'doitac':'le',
-        partnerName: r[11]||'', statusDrive: r[12]||'', statusPay: r[13]||'',
-        statusPoints: r[14]||'', note: r[15]||'', createdAt: r[16]||'',
-        driverMsg: '', confirmVI: '', confirmEN: '', extras: [], hasVAT: false
-      };
-    });
-  }
-
-  // Đọc Rooms từ NBC_ROOMS
-  var shR = ss.getSheetByName('NBC_ROOMS');
-  if (shR && shR.getLastRow() > 1) {
-    var rRows = shR.getRange(2, 1, shR.getLastRow()-1, 2).getValues();
-    result.rooms = rRows.filter(function(r){ return r[0]; }).map(function(r) {
-      return { name: r[0]||'', rate: parseFloat(r[1])||0 };
-    });
-  }
-
-  // Đọc Partners từ NBC_PARTNERS
-  var shP = ss.getSheetByName('NBC_PARTNERS');
-  if (shP && shP.getLastRow() > 1) {
-    var pRows = shP.getRange(2, 1, shP.getLastRow()-1, 8).getValues();
-    result.partners = pRows.filter(function(r){ return r[0]; }).map(function(r) {
-      return {
-        id: r[0]||'', name: r[1]||'', phone: r[2]||'', country: r[3]||'',
-        address: r[4]||'', email: r[5]||'', note: r[6]||'',
-        bookingIds: []
-      };
-    });
-  }
-
-  // Đọc Customers từ NBC_CUSTOMERS
-  var shC = ss.getSheetByName('NBC_CUSTOMERS');
-  if (shC && shC.getLastRow() > 1) {
-    var cRows = shC.getRange(2, 1, shC.getLastRow()-1, 3).getValues();
-    cRows.forEach(function(r) {
-      if (!r[0]) return;
-      result.customers[r[0]] = {
-        tags: r[1] ? r[1].split(', ').filter(Boolean) : [],
-        note: r[2]||''
-      };
-    });
-  }
-
-  // Đọc Users từ NBC_USERS
-  result.users = loadUsers(ss);
-
-  return result;
-}
-
-function styleHeader(sh, numCols) {
-  var r = sh.getRange(1, 1, 1, numCols);
-  r.setBackground('#1A5C38');
-  r.setFontColor('#FFFFFF');
-  r.setFontWeight('bold');
-  sh.setFrozenRows(1);
-}
-
-function formatPhone(phone) {
-  if (!phone) return '';
-  var p = String(phone).trim();
-  // Đã có mã quốc gia
-  if (p.startsWith('+')) return p;
-  // SĐT Việt Nam: bắt đầu bằng 0 → đổi thành +84
-  if (/^0[3-9]\d{8}$/.test(p)) return '+84' + p.substring(1);
-  // Có 84 ở đầu không có +
-  if (p.startsWith('84') && p.length >= 11) return '+' + p;
-  // Giữ nguyên và format text để không mất số 0
-  return "'" + p;
-}
-
-function writeBookings(ss, bookings) {
-  var sh = ss.getSheetByName('NBC_BOOKINGS') || ss.insertSheet('NBC_BOOKINGS');
-  sh.clearContents();
-  var headers = ['Ma','Ten khach','SDT','Ngay','Lo trinh','Loai xe','Gia dieu','Gia VP','Room','Diem','Loai khach','Doi tac','TT dieu xe','TT thanh toan','TT diem','Ghi chu','Ngay tao'];
-  var rows = [headers];
-  (bookings || []).forEach(function(b) {
-    rows.push([
-      b.id||'', b.name||'', formatPhone(b.phone), b.date||'', b.route||'',
-      b.vehicle||'', b.priceDriver||'', b.priceVP||'', b.room||'', b.points||'',
-      (b.custType==='doitac'?'Doi tac':'Khach le'), b.partnerName||'',
-      b.statusDrive||'', b.statusPay||'', b.statusPoints||'',
-      b.note||'', b.createdAt||'', b.pickupTime||''
-    ]);
-  });
-  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
-  styleHeader(sh, headers.length);
-}
-
-function writeRooms(ss, rooms) {
-  var sh = ss.getSheetByName('NBC_ROOMS') || ss.insertSheet('NBC_ROOMS');
-  sh.clearContents();
-  var headers = ['Room', 'Don gia (VND/diem)'];
-  var rows = [headers];
-  (rooms || []).forEach(function(r) {
-    rows.push([r.name||'', r.rate||0]);
-  });
-  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
-  styleHeader(sh, headers.length);
-}
-
-function writePartners(ss, partners) {
-  var sh = ss.getSheetByName('NBC_PARTNERS') || ss.insertSheet('NBC_PARTNERS');
-  sh.clearContents();
-  var headers = ['ID', 'Ten doi tac', 'SDT / Zalo', 'Quoc gia', 'Dia chi', 'Email', 'Ghi chu', 'So booking'];
-  var rows = [headers];
-  (partners || []).forEach(function(p) {
-    rows.push([
-      p.id||'', p.name||'', formatPhone(p.phone), p.country||'',
-      p.address||'', p.email||'', p.note||'',
-      (p.bookingIds||[]).length
-    ]);
-  });
-  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
-  styleHeader(sh, headers.length);
-}
-
-function writeCustomers(ss, customers) {
-  var sh = ss.getSheetByName('NBC_CUSTOMERS') || ss.insertSheet('NBC_CUSTOMERS');
-  sh.clearContents();
-  var headers = ['SDT / Key', 'Tags', 'Ghi chu'];
-  var rows = [headers];
-  Object.keys(customers || {}).forEach(function(key) {
-    var c = customers[key];
-    rows.push([formatPhone(key), (c.tags||[]).join(', '), c.note||'']);
-  });
-  sh.getRange(1, 1, rows.length, headers.length).setValues(rows);
-  styleHeader(sh, headers.length);
-}
-
-function writeBaoCao(ss, bookings, rooms, partners) {
-  var sh = ss.getSheetByName('NBC_BAOCAO') || ss.insertSheet('NBC_BAOCAO');
-  sh.clearContents();
-  var rows = [];
-
-  // ===== TỔNG QUAN =====
-  rows.push(['TỔNG QUAN', '', '', '', '', '', '']);
-  rows.push(['Tổng chuyến', 'Đang xử lý', 'Đã điều', 'Chưa TT', 'Đã cọc', 'Đã TT', '']);
-
-  var totalChuyens = bookings.length;
-  var dangXuLy = bookings.filter(function(b){ return b.statusDrive==='processing'; }).length;
-  var daDieu = bookings.filter(function(b){ return b.statusDrive==='done'; }).length;
-  var chuaTT = bookings.filter(function(b){ return b.statusPay==='unpaid'; }).length;
-  var daCoc = bookings.filter(function(b){ return b.statusPay==='deposited'; }).length;
-  var daTT = bookings.filter(function(b){ return b.statusPay==='paid'; }).length;
-  rows.push([totalChuyens, dangXuLy, daDieu, chuaTT, daCoc, daTT, '']);
-  rows.push(['', '', '', '', '', '', '']);
-
-  rows.push(['Doanh thu VP', 'Chi phi dieu xe', 'Tien diem da thu', 'Tien diem chua thu', 'Doanh so thuc thu', '', '']);
-
-  function parseM(val) {
-    if (!val) return 0;
-    var s = String(val).trim().toLowerCase().replace(/,/g, '');
-    var dots = (s.match(/\./g)||[]).length;
-    if (dots > 1) s = s.replace(/\./g, '');
-    else if (dots === 1 && s.split('.')[1].length === 3) s = s.replace('.', '');
-    if (s.endsWith('tr')) return parseFloat(s) * 1000000;
-    if (s.endsWith('k')) return parseFloat(s) * 1000;
-    return parseFloat(s) || 0;
-  }
-  function calcPts(b) {
-    var r = null;
-    for (var i=0; i<rooms.length; i++) { if (rooms[i].name===b.room) { r=rooms[i]; break; } }
-    return (r && b.points) ? parseFloat(b.points) * r.rate : 0;
-  }
-
-  var doanhThuVP = bookings.reduce(function(s,b){ return s+parseM(b.priceVP); }, 0);
-  var chiPhiDieu = bookings.reduce(function(s,b){ return s+parseM(b.priceDriver); }, 0);
-  var diemDaThu = bookings.filter(function(b){ return b.statusPoints==='collected'; })
-    .reduce(function(s,b){ return s+calcPts(b); }, 0);
-  var diemChuaThu = bookings.filter(function(b){ return b.statusPoints!=='collected' && b.room && b.points; })
-    .reduce(function(s,b){ return s+calcPts(b); }, 0);
-  var doanhSo = doanhThuVP - chiPhiDieu + diemDaThu + diemChuaThu;
-  rows.push([doanhThuVP, chiPhiDieu, diemDaThu, diemChuaThu, doanhSo, '', '']);
-  rows.push(['', '', '', '', '', '', '']);
-
-  // ===== THEO ROOM =====
-  rows.push(['THEO ROOM', '', '', '', '', '', '']);
-  rows.push(['Room', 'Don gia (VND/diem)', 'So chuyen', 'Tong diem', 'Tong tien diem', 'Da thu', 'Chua thu']);
-  var roomStats = {};
-  bookings.forEach(function(b) {
-    if (!b.room) return;
-    var r = null;
-    for (var i=0; i<rooms.length; i++) { if (rooms[i].name===b.room) { r=rooms[i]; break; } }
-    if (!roomStats[b.room]) roomStats[b.room] = { rate: r?r.rate:0, count:0, totalPts:0, totalMoney:0, collected:0, uncollected:0 };
-    roomStats[b.room].count++;
-    if (b.points && r) {
-      var pts = parseFloat(b.points);
-      var money = pts * r.rate;
-      roomStats[b.room].totalPts += pts;
-      roomStats[b.room].totalMoney += money;
-      if (b.statusPoints==='collected') roomStats[b.room].collected += money;
-      else roomStats[b.room].uncollected += money;
-    }
-  });
-  Object.keys(roomStats).forEach(function(name) {
-    var s = roomStats[name];
-    rows.push([name, s.rate, s.count, s.totalPts, s.totalMoney, s.collected, s.uncollected]);
-  });
-  if (!Object.keys(roomStats).length) rows.push(['Khong co du lieu', '', '', '', '', '', '']);
-  rows.push(['', '', '', '', '', '', '']);
-
-  // ===== THEO ĐỐI TÁC =====
-  rows.push(['THEO ĐỐI TÁC', '', '', '', '', '', '']);
-  rows.push(['Doi tac', 'So chuyen', 'Doanh thu VP', 'Chi phi dieu xe', 'Lai gop', 'Chua TT', '']);
-  var partnerStats = {};
-  bookings.forEach(function(b) {
-    if (b.custType !== 'doitac' || !b.partnerId) return;
-    var key = b.partnerId;
-    if (!partnerStats[key]) {
-      var name = b.partnerName || key;
-      for (var i=0; i<partners.length; i++) { if (partners[i].id===key) { name=partners[i].name; break; } }
-      partnerStats[key] = { name:name, count:0, vp:0, cost:0, unpaid:0 };
-    }
-    partnerStats[key].count++;
-    partnerStats[key].vp += parseM(b.priceVP);
-    partnerStats[key].cost += parseM(b.priceDriver);
-    if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseM(b.priceVP);
-  });
-  Object.keys(partnerStats).forEach(function(key) {
-    var s = partnerStats[key];
-    rows.push([s.name, s.count, s.vp, s.cost, s.vp-s.cost, s.unpaid, '']);
-  });
-  if (!Object.keys(partnerStats).length) rows.push(['Khong co du lieu', '', '', '', '', '', '']);
-
-  // Ghi vào sheet
-  sh.getRange(1, 1, rows.length, 7).setValues(rows);
-
-  // Format section headers
-  var sectionRows = [1, 6, Object.keys(roomStats).length + 9, Object.keys(roomStats).length + 12];
-  // Style header chung
-  var titleRows = [];
-  for (var i=0; i<rows.length; i++) {
-    if (rows[i][0] === 'TỔNG QUAN' || rows[i][0] === 'THEO ROOM' || rows[i][0] === 'THEO ĐỐI TÁC') {
-      titleRows.push(i+1);
-    }
-  }
-  titleRows.forEach(function(r) {
-    var rng = sh.getRange(r, 1, 1, 7);
-    rng.setBackground('#1A5C38'); rng.setFontColor('#FFFFFF'); rng.setFontWeight('bold');
-    sh.getRange(r+1, 1, 1, 7).setBackground('#E8F5EE').setFontWeight('bold');
-  });
-  sh.setFrozenRows(0);
-}
-
-
-// ===== TELEGRAM =====
-// Token va Chat ID duoc luu trong Script Properties (File > Project properties > Script properties)
-// KHONG hardcode token o day de tranh lo lot khi chia se code.
-// Key can tao: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
-function getTelegramConfig() {
-  var props = PropertiesService.getScriptProperties();
-  return {
-    token: props.getProperty('TELEGRAM_TOKEN') || '',
-    chatId: props.getProperty('TELEGRAM_CHAT_ID') || ''
-  };
-}
-
-function sendTelegram(msg) {
-  try {
-    var cfg = getTelegramConfig();
-    if (!cfg.token || !cfg.chatId) return;
-    UrlFetchApp.fetch('https://api.telegram.org/bot' + cfg.token + '/sendMessage', {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify({ chat_id: cfg.chatId, text: msg }),
-      muteHttpExceptions: true
-    });
-  } catch(e) {}
-}
-
-function notifyNewBooking(booking) {
-  var nl = '\n';
-  var msg = '[NBC] Dat xe moi: ' + (booking.id||'') + nl
-    + 'Khach: ' + (booking.name||'Khach') + (booking.phone ? ' - ' + booking.phone : '') + nl
-    + 'Ngay don: ' + (booking.date||'--') + nl
-    + 'Lo trinh: ' + (booking.route||'--') + nl
-    + 'Gia VP: ' + (booking.priceVP||'--');
-  sendTelegram(msg);
-}
-
-// So sanh toan bo danh sach booking voi tap ID da tung thong bao (luu trong CacheService/Properties)
-// thay vi chi so sanh phan tu dau mang, tranh bo sot khi co nhieu booking moi cung luc
-// hoac bao nham khi thu tu mang thay doi.
-function notifyAllNewBookings(bks) {
-  try {
-    if (!bks || !bks.length) return;
-    var cfg = loadTeleConfigFromSheet(SpreadsheetApp.getActiveSpreadsheet());
-    if (cfg.notifyNew === false) return;
-
-    var props = PropertiesService.getScriptProperties();
-    var notifiedRaw = props.getProperty('notified_booking_ids') || '[]';
-    var notifiedIds = [];
-    try { notifiedIds = JSON.parse(notifiedRaw); } catch(e) { notifiedIds = []; }
-    var notifiedSet = {};
-    notifiedIds.forEach(function(id){ notifiedSet[id] = true; });
-
-    var newOnes = [];
-    bks.forEach(function(b) {
-      if (b.id && !notifiedSet[b.id]) newOnes.push(b);
-    });
-
-    if (!newOnes.length) return;
-
-    newOnes.forEach(function(b) {
-      notifyNewBooking(b);
-      notifiedSet[b.id] = true;
-    });
-
-    // Gioi han danh sach ID da luu de tranh phinh to qua thoi gian (giu 500 ID gan nhat)
-    var allIds = Object.keys(notifiedSet);
-    if (allIds.length > 500) allIds = allIds.slice(allIds.length - 500);
-    props.setProperty('notified_booking_ids', JSON.stringify(allIds));
-  } catch(err) {
-    sendTelegram('[NBC] Loi notifyAllNewBookings: ' + String(err));
-  }
-}
-
-// Parse ngay dang dd/mm/yyyy hoac ISO (co chu "T"), tra ve null neu khong parse duoc
-// thay vi bo qua am tham bang try/catch rong.
-function parseBookingDate(ds) {
-  if (!ds) return null;
-  try {
-    if (ds.indexOf('T') > 0) {
-      var d = new Date(ds);
-      if (isNaN(d.getTime())) return null;
-      return d;
-    }
-    var p = ds.split('/');
-    if (p.length === 3) {
-      var day = parseInt(p[0], 10), mon = parseInt(p[1], 10), yr = parseInt(p[2], 10);
-      if (!isNaN(day) && !isNaN(mon) && !isNaN(yr)) {
-        var dd = new Date(yr, mon - 1, day);
-        if (!isNaN(dd.getTime())) return dd;
-      }
-      return null;
-    }
-    // Fallback: thu yyyy-mm-dd hoac cac dinh dang ma Date() hieu duoc truc tiep
-    var fallback = new Date(ds);
-    if (!isNaN(fallback.getTime())) return fallback;
-    return null;
-  } catch(e) {
-    return null;
-  }
-}
-
-function checkAndNotify() {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var data = loadData(ss);
-    if (!data || !data.bookings) return;
-    var cfg = loadTeleConfigFromSheet(ss);
-    var hours = cfg.alertHours || 3;
-    if (cfg.notifyUnassigned === false) return;
-    var now = new Date();
-
-    // Tap ID da canh bao roi, tranh spam lap lai moi lan trigger chay
-    var props = PropertiesService.getScriptProperties();
-    var alertedRaw = props.getProperty('alerted_unassigned_ids') || '[]';
-    var alertedIds = [];
-    try { alertedIds = JSON.parse(alertedRaw); } catch(e) { alertedIds = []; }
-    var alertedSet = {};
-    alertedIds.forEach(function(id){ alertedSet[id] = true; });
-
-    var alerts = [];
-    var stillUnassignedIds = [];
-    (data.bookings||[]).forEach(function(b) {
-      if (b.statusDrive !== 'processing' || !b.date) return;
-      var bd = parseBookingDate(b.date);
-      if (!bd) return;
-      var diff = (bd - now) / (1000*60*60);
-      if (diff >= 0 && diff <= hours) {
-        stillUnassignedIds.push(b.id);
-        if (!alertedSet[b.id]) {
-          alerts.push('[Chua dieu] ' + (b.id||'') + ' - ' + (b.name||'') + '\n' + (b.route||'--') + ' - ' + b.date);
-        }
-      }
-    });
-
-    if (alerts.length) {
-      sendTelegram('Canh bao chua dieu xe trong ' + hours + ' gio toi\n\n' + alerts.join('\n\n'));
-    }
-
-    // Cap nhat tap da canh bao: chi giu lai nhung booking van con trong dien "sap toi/chua dieu"
-    // de neu booking duoc dieu xe roi lai bi huy va quay lai trang thai processing, no se duoc canh bao lai.
-    props.setProperty('alerted_unassigned_ids', JSON.stringify(stillUnassignedIds));
-  } catch(err) { sendTelegram('[NBC] Loi: ' + String(err)); }
-}
-
-// Tao trigger time-driven de checkAndNotify tu dong chay dinh ky (moi gio).
-// Goi ham nay 1 LAN DUY NHAT thu cong tu Apps Script Editor (chon ensureCheckAndNotifyTrigger > Run)
-// de kich hoat. Apps Script khong tu tao trigger neu khong co dong code goi ham nay.
-function ensureCheckAndNotifyTrigger() {
-  var triggers = ScriptApp.getProjectTriggers();
-  var exists = triggers.some(function(t) {
-    return t.getHandlerFunction() === 'checkAndNotify';
-  });
-  if (exists) return 'Trigger da ton tai, khong tao them.';
-  ScriptApp.newTrigger('checkAndNotify')
-    .timeBased()
-    .everyHours(1)
-    .create();
-  return 'Da tao trigger checkAndNotify chay moi gio.';
-}
-
-function saveTeleConfigToSheet(ss, cfg) {
-  var sh = ss.getSheetByName('NBC_CONFIG') || ss.insertSheet('NBC_CONFIG');
-  sh.getRange(2,1).setValue(JSON.stringify(cfg||{}));
-}
-
-function loadTeleConfigFromSheet(ss) {
-  var sh = ss.getSheetByName('NBC_CONFIG');
-  if (!sh || sh.getLastRow() < 2) return {};
-  var val = sh.getRange(2,1).getValue();
-  try { return val ? JSON.parse(val) : {}; } catch(e) { return {}; }
-}
-
-function jsonOut(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}`
-
 // ===== ROOMS =====
 function renderRoomSettings() {
   const el = document.getElementById('room-list-settings');

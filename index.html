@@ -762,7 +762,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.6';
+const APP_VERSION = '15.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -3551,6 +3551,7 @@ function setBCMainTab(t) {
     document.getElementById('bcmtab-'+x).classList.toggle('active', x===t);
     document.getElementById('bc-body-'+x).style.display = (x===t) ? 'block' : 'none';
   });
+  renderBaoCao();
 }
 
 function setBCFilter(f) {
@@ -3807,6 +3808,47 @@ function renderBaoCao() {
     vehicleStats[g].cost += parseMoneyNum(b.priceDriver);
   });
 
+  // Theo đối tác
+  const partnerStats = {};
+  list.forEach(function(b) {
+    if (b.custType !== 'doitac') return;
+    // Dùng partnerId nếu có, fallback về partnerName
+    const key = b.partnerId || b.partnerName || 'unknown';
+    if (!key || key === 'unknown') return;
+    if (!partnerStats[key]) {
+      const p = partners.find(function(x){ return x.id === key || x.name === key; });
+      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0, deductions:0 };
+    }
+    partnerStats[key].count++;
+    partnerStats[key].vp += parseMoneyNum(b.priceVP);
+    partnerStats[key].cost += parseMoneyNum(b.priceDriver);
+    partnerStats[key].diem += calcPointsMoney(b);
+    partnerStats[key].deductions += calcDeductions(b);
+    if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseMoneyNum(b.priceVP);
+  });
+  const partnerSelKey = partnerSel ? (Object.keys(partnerStats).find(function(k){
+    return k === partnerSel || partnerStats[k].name === partners.find(function(p){ return p.id===partnerSel; })?.name;
+  }) || partnerSel) : '';
+
+  // Chỉ hiển thị "báo cáo tổng" khi tab đang xem có dữ liệu — tránh gây hiểu nhầm
+  // nếu Room/Loại xe/Đối tác đang chọn không có chuyến nào trong kỳ.
+  let activeHasData = true;
+  if (bcMainTab === 'room' && roomSel) activeHasData = !!roomStats[roomSel];
+  else if (bcMainTab === 'vehicle' && vehicleSel) activeHasData = !!vehicleStats[vehicleSel];
+  else if (bcMainTab === 'partner' && partnerSel) activeHasData = !!partnerStats[partnerSelKey];
+
+  if (!activeHasData) {
+    let noDataMsg = 'Không có dữ liệu trong kỳ.';
+    if (bcMainTab === 'room') noDataMsg = 'Không có dữ liệu cho Room "'+roomSel+'" trong kỳ.';
+    if (bcMainTab === 'vehicle') noDataMsg = 'Không có dữ liệu cho Loại xe "'+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'" trong kỳ.';
+    if (bcMainTab === 'partner') {
+      const p = partners.find(function(x){ return x.id === partnerSel; });
+      noDataMsg = 'Không có dữ liệu cho đối tác'+(p?' "'+p.name+'"':'')+' trong kỳ.';
+    }
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div>'+noDataMsg+'</div></div>';
+    return;
+  }
+
   let html = '<div class="bc-grid">';
 
   // Tổng chuyến
@@ -3867,31 +3909,9 @@ function renderBaoCao() {
   }
 
   // Theo đối tác
-  const partnerStats = {};
-  list.forEach(function(b) {
-    if (b.custType !== 'doitac') return;
-    // Dùng partnerId nếu có, fallback về partnerName
-    const key = b.partnerId || b.partnerName || 'unknown';
-    if (!key || key === 'unknown') return;
-    if (!partnerStats[key]) {
-      const p = partners.find(function(x){ return x.id === key || x.name === key; });
-      partnerStats[key] = { name: (p && p.name) || b.partnerName || key, count:0, vp:0, cost:0, unpaid:0, diem:0, deductions:0 };
-    }
-    partnerStats[key].count++;
-    partnerStats[key].vp += parseMoneyNum(b.priceVP);
-    partnerStats[key].cost += parseMoneyNum(b.priceDriver);
-    partnerStats[key].diem += calcPointsMoney(b);
-    partnerStats[key].deductions += calcDeductions(b);
-    if (b.statusPay !== 'paid') partnerStats[key].unpaid += parseMoneyNum(b.priceVP);
-  });
-
   if (partnerSel) {
     html += '<div class="bc-section">Theo đối tác</div>';
-    // Tìm theo id hoặc name
-    const selKey = Object.keys(partnerStats).find(function(k){
-      return k === partnerSel || partnerStats[k].name === partners.find(function(p){ return p.id===partnerSel; })?.name;
-    }) || partnerSel;
-    const s = partnerStats[selKey];
+    const s = partnerStats[partnerSelKey];
     if (s) {
       const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
       html += '<div class="bc-room-row">';

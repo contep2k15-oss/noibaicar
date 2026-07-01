@@ -299,7 +299,7 @@
       <div class="card">
         <div class="card-head"><div class="card-head-left"><span>✏️</span><span>Tin nháp đầu vào</span></div></div>
         <div class="card-body">
-          <textarea id="draft" rows="4" placeholder="Nhập tự do — ngày giờ, điểm đón/trả, loại xe, tên khách, SĐT, số hiệu bay, giá điều..."></textarea>
+          <textarea id="draft" rows="4" placeholder="Nhập tự do — ngày giờ, điểm đón/trả, loại xe, tên khách, SĐT, số hiệu bay... (giá điều nhập ở ô riêng bên dưới)"></textarea>
           <div class="field">
             <label>Giá VP</label>
             <input type="text" id="price-client" placeholder="vd: 400k — để trống nếu không gửi giá cho khách">
@@ -878,7 +878,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.7';
+const APP_VERSION = '16.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1506,7 +1506,7 @@ async function processAll() {
 
 TIN NHÁP: "${draft}"
 GIÁ VP: "${priceVP||'không có'}"
-GIÁ ĐIỀU (nhập tay — nếu có thì LUÔN dùng đúng giá trị này cho priceDriver, không tự suy diễn khác đi; nếu "không có" thì tự nhận diện giá điều xe từ tin nháp, để trống nếu tin nháp cũng không đề cập): "${priceDriverInput||'không có'}"
+GIÁ ĐIỀU (nhập tay — CHỈ dùng đúng giá trị này cho priceDriver khi có nhập; nếu "không có" thì để TRỐNG priceDriver, KHÔNG tự nhận diện/suy đoán giá điều xe từ tin nháp dù tin nháp có nhắc tới giá): "${priceDriverInput||'không có'}"
 BIỂN TÊN: ${bienTen?'có':'không'}
 TIỀN TỐ GIÁ: "${giaPrefix}"
 HIỂN THỊ GIÁ VP CHO KHÁCH: ${showGiaVP?'có':'không'}
@@ -1596,16 +1596,16 @@ Rồi điền các trường sau (bullet •, chỉ dòng có dữ liệu):
 KHÔNG có lời chào, lời kết, câu hỏi. Chỉ thông tin thuần.
 
 === ĐẦU RA ===
-1. "driver": 3 dòng, PHẢI cách nhau bằng 1 dòng trống (dùng \n\n giữa các dòng):
+1. "driver": 2 hoặc 3 dòng tuỳ có GIÁ ĐIỀU hay không, PHẢI cách nhau bằng 1 dòng trống (dùng \n\n giữa các dòng):
 DÒNG 1: ngày+loại xe. Hôm nay: chỉ ghi loại xe (không ghi ngày). Ngày khác: DD/MM + loại xe.
 DÒNG 2: Có bay=[mã bay HH:MM hạ TX ➜ điểm đến bỏ số nhà]. Không bay=[HH:MM điểm đón bỏ số nhà ➜ điểm đến]. Nhiều điểm đón dùng +.
-DÒNG 3: [${giaPrefix}giá ngắn]
-Ví dụ đúng: "X7C\n\nVN616 06:00 hạ T2 ➜ Cầu Giấy\n\nVP300k". QUAN TRỌNG: Giữa các dòng PHẢI có \n\n (2 ký tự xuống dòng), không phải \n (1 ký tự).
+DÒNG 3 (GIÁ): CHỈ thêm dòng này khi GIÁ ĐIỀU ở trên đã được nhập tay (khác "không có") — nội dung [${giaPrefix}giá ngắn] lấy ĐÚNG giá đã nhập, không tự đoán. Nếu GIÁ ĐIỀU = "không có" → BỎ HẲN dòng 3, tin điều xe chỉ còn 2 dòng (không để trống/ghi "chưa có giá"), vẫn tạo tin bình thường.
+Ví dụ có giá: "X7C\n\nVN616 06:00 hạ T2 ➜ Cầu Giấy\n\nVP300k". Ví dụ không có giá: "X7C\n\nVN616 06:00 hạ T2 ➜ Cầu Giấy". QUAN TRỌNG: Giữa các dòng PHẢI có \n\n (2 ký tự xuống dòng), không phải \n (1 ký tự).
 TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","vehicleGroup":"MỘT trong: Xe thuong | VF9 | Carnival | Limousine | Xe Sang | Xe to | Xe khac — theo quy tắc NHÓM LOẠI XE ở trên","priceDriver":"${priceDriverInput || 'giá điều xe nhận diện được từ tin nháp (nếu tin nháp có đề cập), để trống nếu tin nháp không đề cập'}","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","vehicleGroup":"MỘT trong: Xe thuong | VF9 | Carnival | Limousine | Xe Sang | Xe to | Xe khac — theo quy tắc NHÓM LOẠI XE ở trên","priceDriver":"${priceDriverInput || ''}","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;

@@ -162,11 +162,17 @@
   .filter-bar .filter-chip{scroll-snap-align:start}
   .filter-chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--gb);background:white;color:var(--text2);white-space:nowrap;transition:all .15s;flex-shrink:0}
   .filter-chip.active{background:var(--gd);color:white;border-color:var(--gd)}
+  .filter-chip.main{font-weight:700}
+  .filter-chip.main.active{box-shadow:0 1px 3px rgba(20,82,48,.35)}
+  .chip-caption{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:0 14px;margin:0 0 4px}
   .filter-bar.sub-bar{padding-top:0;padding-bottom:8px}
   .filter-chip.sub{padding:5px 10px;font-size:11.5px;background:var(--gl);border-color:var(--gl);color:var(--gt)}
   .filter-chip.sub.active{background:var(--gm);color:white;border-color:var(--gm)}
-  .sub-date-wrap{padding:0 14px 10px;flex-shrink:0}
-  .sub-date-wrap input[type=date]{width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none}
+  .filter-bar.time-bar{background:var(--bg);border:0.5px solid var(--gb);border-radius:var(--radius-sm);padding:6px;margin:0 14px 4px;gap:6px;overflow-x:auto}
+  .filter-chip.time{border-radius:6px;padding:6px 10px;font-size:11.5px;background:white;border-color:var(--gb);color:var(--text2)}
+  .filter-chip.time.active{background:var(--blue);color:white;border-color:var(--blue)}
+  .sub-date-wrap{background:var(--bg);border:0.5px solid var(--gb);border-radius:var(--radius-sm);padding:8px;margin:0 14px 8px;flex-shrink:0}
+  .sub-date-wrap input[type=date]{width:100%;border:1px solid var(--gb);border-radius:6px;padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none}
 
   .search-bar{padding:10px 14px 0;flex-shrink:0}
   .search-input{position:relative}
@@ -384,17 +390,19 @@
       </div>
     </div>
     <div class="filter-bar" style="padding-top:10px" id="booking-main-tabs">
-      <button class="filter-chip active" id="mtab-all" onclick="setMainTab('all')">🕐 Tất cả</button>
-      <button class="filter-chip" id="mtab-chuadieu" onclick="setMainTab('chuadieu')">🚗 Chưa điều</button>
-      <button class="filter-chip" id="mtab-vehicle" onclick="setMainTab('vehicle')">🚙 Loại xe</button>
-      <button class="filter-chip" id="mtab-triploai" onclick="setMainTab('triploai')">🗂️ Loại hình</button>
+      <button class="filter-chip main active" id="mtab-all" onclick="setMainTab('all')">🕐 Tất cả</button>
+      <button class="filter-chip main" id="mtab-chuadieu" onclick="setMainTab('chuadieu')">🚗 Chưa điều</button>
+      <button class="filter-chip main" id="mtab-vehicle" onclick="setMainTab('vehicle')">🚙 Loại xe</button>
+      <button class="filter-chip main" id="mtab-triploai" onclick="setMainTab('triploai')">🗂️ Loại hình</button>
     </div>
 
     <div id="body-all">
-      <div class="filter-bar sub-bar" id="sub-time-row-all">
-        <button class="filter-chip sub active" id="sub-time-today-all" onclick="setTimeSub('today')">Hôm nay</button>
-        <button class="filter-chip sub" id="sub-time-month-all" onclick="setTimeSub('month')">Tháng này</button>
-        <button class="filter-chip sub" id="sub-time-custom-all" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      <div class="chip-caption">Thời gian</div>
+      <div class="filter-bar time-bar" id="sub-time-row-all">
+        <button class="filter-chip time active" id="sub-time-all-all" onclick="setTimeSub('all')">Tất cả</button>
+        <button class="filter-chip time" id="sub-time-today-all" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip time" id="sub-time-month-all" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip time" id="sub-time-custom-all" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
       </div>
       <div class="sub-date-wrap" id="sub-time-datewrap-all" style="display:none">
         <div style="display:flex;gap:8px;align-items:center">
@@ -406,10 +414,12 @@
     </div>
 
     <div id="body-chuadieu" style="display:none">
-      <div class="filter-bar sub-bar" id="sub-time-row-chuadieu">
-        <button class="filter-chip sub active" id="sub-time-today-chuadieu" onclick="setTimeSub('today')">Hôm nay</button>
-        <button class="filter-chip sub" id="sub-time-month-chuadieu" onclick="setTimeSub('month')">Tháng này</button>
-        <button class="filter-chip sub" id="sub-time-custom-chuadieu" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      <div class="chip-caption">Thời gian</div>
+      <div class="filter-bar time-bar" id="sub-time-row-chuadieu">
+        <button class="filter-chip time active" id="sub-time-all-chuadieu" onclick="setTimeSub('all')">Tất cả</button>
+        <button class="filter-chip time" id="sub-time-today-chuadieu" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip time" id="sub-time-month-chuadieu" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip time" id="sub-time-custom-chuadieu" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
       </div>
       <div class="sub-date-wrap" id="sub-time-datewrap-chuadieu" style="display:none">
         <div style="display:flex;gap:8px;align-items:center">
@@ -421,10 +431,12 @@
     </div>
 
     <div id="body-vehicle" style="display:none">
-      <div class="filter-bar sub-bar" id="sub-time-row-vehicle">
-        <button class="filter-chip sub active" id="sub-time-today-vehicle" onclick="setTimeSub('today')">Hôm nay</button>
-        <button class="filter-chip sub" id="sub-time-month-vehicle" onclick="setTimeSub('month')">Tháng này</button>
-        <button class="filter-chip sub" id="sub-time-custom-vehicle" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      <div class="chip-caption">Thời gian</div>
+      <div class="filter-bar time-bar" id="sub-time-row-vehicle">
+        <button class="filter-chip time active" id="sub-time-all-vehicle" onclick="setTimeSub('all')">Tất cả</button>
+        <button class="filter-chip time" id="sub-time-today-vehicle" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip time" id="sub-time-month-vehicle" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip time" id="sub-time-custom-vehicle" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
       </div>
       <div class="sub-date-wrap" id="sub-time-datewrap-vehicle" style="display:none">
         <div style="display:flex;gap:8px;align-items:center">
@@ -433,8 +445,10 @@
           <input type="date" id="sub-time-date-to-vehicle" onchange="onCustomDateRangePicked('vehicle')" style="flex:1">
         </div>
       </div>
+      <div class="chip-caption">Loại xe</div>
       <div class="filter-bar sub-bar" id="sub-vehicle-row">
-        <button class="filter-chip sub active" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
+        <button class="filter-chip sub active" id="sub-veh-TatCa" onclick="setVehicleSub('')">Tất cả</button>
+        <button class="filter-chip sub" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
         <button class="filter-chip sub" id="sub-veh-VF9" onclick="setVehicleSub('VF9')">VF9</button>
         <button class="filter-chip sub" id="sub-veh-Carnival" onclick="setVehicleSub('Carnival')">Carnival</button>
         <button class="filter-chip sub" id="sub-veh-Limousine" onclick="setVehicleSub('Limousine')">Limousine</button>
@@ -445,10 +459,12 @@
     </div>
 
     <div id="body-triploai" style="display:none">
-      <div class="filter-bar sub-bar" id="sub-time-row-triploai">
-        <button class="filter-chip sub active" id="sub-time-today-triploai" onclick="setTimeSub('today')">Hôm nay</button>
-        <button class="filter-chip sub" id="sub-time-month-triploai" onclick="setTimeSub('month')">Tháng này</button>
-        <button class="filter-chip sub" id="sub-time-custom-triploai" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      <div class="chip-caption">Thời gian</div>
+      <div class="filter-bar time-bar" id="sub-time-row-triploai">
+        <button class="filter-chip time active" id="sub-time-all-triploai" onclick="setTimeSub('all')">Tất cả</button>
+        <button class="filter-chip time" id="sub-time-today-triploai" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip time" id="sub-time-month-triploai" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip time" id="sub-time-custom-triploai" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
       </div>
       <div class="sub-date-wrap" id="sub-time-datewrap-triploai" style="display:none">
         <div style="display:flex;gap:8px;align-items:center">
@@ -457,8 +473,10 @@
           <input type="date" id="sub-time-date-to-triploai" onchange="onCustomDateRangePicked('triploai')" style="flex:1">
         </div>
       </div>
+      <div class="chip-caption">Loại hình</div>
       <div class="filter-bar sub-bar" id="sub-triploai-row">
-        <button class="filter-chip sub active" id="sub-tl-SanBay" onclick="setTripSub('San bay')">✈️ Sân bay</button>
+        <button class="filter-chip sub active" id="sub-tl-TatCa" onclick="setTripSub('')">Tất cả</button>
+        <button class="filter-chip sub" id="sub-tl-SanBay" onclick="setTripSub('San bay')">✈️ Sân bay</button>
         <button class="filter-chip sub" id="sub-tl-DiTinh" onclick="setTripSub('Di tinh')">🛣️ Đi tỉnh</button>
         <button class="filter-chip sub" id="sub-tl-CityTour" onclick="setTripSub('City tour')">🏙️ City tour</button>
         <button class="filter-chip sub" id="sub-tl-DiTour" onclick="setTripSub('Di Tour')">🗺️ Đi Tour</button>
@@ -476,19 +494,20 @@
   <div class="screen" id="tab-baocao">
     <div style="padding:10px 14px 0;flex-shrink:0;display:flex;flex-direction:column;gap:8px">
       <div class="filter-bar" id="bc-main-tabs" style="padding:0">
-        <button class="filter-chip active" id="bcmtab-time" onclick="setBCMainTab('time')">📊 Tổng quan</button>
-        <button class="filter-chip" id="bcmtab-room" onclick="setBCMainTab('room')">🏆 Room</button>
-        <button class="filter-chip" id="bcmtab-vehicle" onclick="setBCMainTab('vehicle')">🚙 Loại xe</button>
-        <button class="filter-chip" id="bcmtab-partner" onclick="setBCMainTab('partner')">🤝 Đối tác</button>
+        <button class="filter-chip main active" id="bcmtab-time" onclick="setBCMainTab('time')">📊 Tổng quan</button>
+        <button class="filter-chip main" id="bcmtab-room" onclick="setBCMainTab('room')">🏆 Room</button>
+        <button class="filter-chip main" id="bcmtab-vehicle" onclick="setBCMainTab('vehicle')">🚙 Loại xe</button>
+        <button class="filter-chip main" id="bcmtab-partner" onclick="setBCMainTab('partner')">🤝 Đối tác</button>
       </div>
 
       <div id="bc-body-time">
-        <div class="filter-bar sub-bar" style="padding:0 0 8px">
-          <button class="filter-chip sub" id="bc-day-time" onclick="setBCFilter('day')">Ngày</button>
-          <button class="filter-chip sub active" id="bc-month-time" onclick="setBCFilter('month')">Tháng này</button>
-          <button class="filter-chip sub" id="bc-custom-time" onclick="setBCFilter('custom')">📆 Lọc</button>
+        <div class="chip-caption">Thời gian</div>
+        <div class="filter-bar time-bar">
+          <button class="filter-chip time" id="bc-day-time" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip time active" id="bc-month-time" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip time" id="bc-custom-time" onclick="setBCFilter('custom')">📆 Lọc</button>
         </div>
-        <div class="sub-date-wrap" id="bc-datewrap-time" style="display:none;padding:0">
+        <div class="sub-date-wrap" id="bc-datewrap-time" style="display:none">
           <div style="display:flex;gap:8px;align-items:center">
             <input type="date" id="bc-date-from-time" onchange="onBCDateRangePicked('time')" style="flex:1">
             <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
@@ -498,36 +517,40 @@
       </div>
 
       <div id="bc-body-room" style="display:none">
-        <div class="filter-bar sub-bar" style="padding:0 0 8px">
-          <button class="filter-chip sub" id="bc-day-room" onclick="setBCFilter('day')">Ngày</button>
-          <button class="filter-chip sub active" id="bc-month-room" onclick="setBCFilter('month')">Tháng này</button>
-          <button class="filter-chip sub" id="bc-custom-room" onclick="setBCFilter('custom')">📆 Lọc</button>
+        <div class="chip-caption">Thời gian</div>
+        <div class="filter-bar time-bar">
+          <button class="filter-chip time" id="bc-day-room" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip time active" id="bc-month-room" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip time" id="bc-custom-room" onclick="setBCFilter('custom')">📆 Lọc</button>
         </div>
-        <div class="sub-date-wrap" id="bc-datewrap-room" style="display:none;padding:0">
+        <div class="sub-date-wrap" id="bc-datewrap-room" style="display:none">
           <div style="display:flex;gap:8px;align-items:center">
             <input type="date" id="bc-date-from-room" onchange="onBCDateRangePicked('room')" style="flex:1">
             <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
             <input type="date" id="bc-date-to-room" onchange="onBCDateRangePicked('room')" style="flex:1">
           </div>
         </div>
+        <div class="chip-caption">Room</div>
         <select id="bc-room-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🏆 Tất cả Room</option>
         </select>
       </div>
 
       <div id="bc-body-vehicle" style="display:none">
-        <div class="filter-bar sub-bar" style="padding:0 0 8px">
-          <button class="filter-chip sub" id="bc-day-vehicle" onclick="setBCFilter('day')">Ngày</button>
-          <button class="filter-chip sub active" id="bc-month-vehicle" onclick="setBCFilter('month')">Tháng này</button>
-          <button class="filter-chip sub" id="bc-custom-vehicle" onclick="setBCFilter('custom')">📆 Lọc</button>
+        <div class="chip-caption">Thời gian</div>
+        <div class="filter-bar time-bar">
+          <button class="filter-chip time" id="bc-day-vehicle" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip time active" id="bc-month-vehicle" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip time" id="bc-custom-vehicle" onclick="setBCFilter('custom')">📆 Lọc</button>
         </div>
-        <div class="sub-date-wrap" id="bc-datewrap-vehicle" style="display:none;padding:0">
+        <div class="sub-date-wrap" id="bc-datewrap-vehicle" style="display:none">
           <div style="display:flex;gap:8px;align-items:center">
             <input type="date" id="bc-date-from-vehicle" onchange="onBCDateRangePicked('vehicle')" style="flex:1">
             <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
             <input type="date" id="bc-date-to-vehicle" onchange="onBCDateRangePicked('vehicle')" style="flex:1">
           </div>
         </div>
+        <div class="chip-caption">Loại xe</div>
         <select id="bc-vehicle-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🚙 Tất cả loại xe</option>
           <option value="Xe thuong">Xe thường</option>
@@ -541,18 +564,20 @@
       </div>
 
       <div id="bc-body-partner" style="display:none">
-        <div class="filter-bar sub-bar" style="padding:0 0 8px">
-          <button class="filter-chip sub" id="bc-day-partner" onclick="setBCFilter('day')">Ngày</button>
-          <button class="filter-chip sub active" id="bc-month-partner" onclick="setBCFilter('month')">Tháng này</button>
-          <button class="filter-chip sub" id="bc-custom-partner" onclick="setBCFilter('custom')">📆 Lọc</button>
+        <div class="chip-caption">Thời gian</div>
+        <div class="filter-bar time-bar">
+          <button class="filter-chip time" id="bc-day-partner" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip time active" id="bc-month-partner" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip time" id="bc-custom-partner" onclick="setBCFilter('custom')">📆 Lọc</button>
         </div>
-        <div class="sub-date-wrap" id="bc-datewrap-partner" style="display:none;padding:0">
+        <div class="sub-date-wrap" id="bc-datewrap-partner" style="display:none">
           <div style="display:flex;gap:8px;align-items:center">
             <input type="date" id="bc-date-from-partner" onchange="onBCDateRangePicked('partner')" style="flex:1">
             <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
             <input type="date" id="bc-date-to-partner" onchange="onBCDateRangePicked('partner')" style="flex:1">
           </div>
         </div>
+        <div class="chip-caption">Đối tác</div>
         <select id="bc-partner-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🤝 Tất cả đối tác</option>
         </select>
@@ -845,7 +870,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.9';
+const APP_VERSION = '16.0';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1125,11 +1150,11 @@ let apiKey = localStorage.getItem('nbc_apikey') || '';
 let bookings = JSON.parse(localStorage.getItem('nbc_bookings') || '[]');
 let rooms = JSON.parse(localStorage.getItem('nbc_rooms') || '[]');
 let currentMainTab = 'all';
-let currentTimeSub = 'today';
+let currentTimeSub = 'all';
 let currentTimeRangeFrom = '';
 let currentTimeRangeTo = '';
-let currentVehicleSub = 'Xe thuong';
-let currentTripSub = 'San bay';
+let currentVehicleSub = '';
+let currentTripSub = '';
 let currentDetailId = null;
 let lastProcessed = null;
 let editingRoomIdx = null;
@@ -2457,7 +2482,7 @@ function setMainTab(t) {
 function setTimeSub(t) {
   currentTimeSub = t;
   BOOKING_TAB_SUFFIXES.forEach(function(suf) {
-    ['today','month','custom'].forEach(function(x) {
+    ['all','today','month','custom'].forEach(function(x) {
       const el = document.getElementById('sub-time-'+x+'-'+suf);
       if (el) el.classList.toggle('active', x===t);
     });
@@ -2505,8 +2530,8 @@ function onCustomDateRangePicked(suffix) {
   renderBookings();
 }
 
-const VEHICLE_GROUP_IDS = {'Xe thuong':'XeThuong','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'XeSang','Xe to':'XeTo','Xe khac':'XeKhac'};
-const TRIP_TYPE_IDS = {'San bay':'SanBay','Di tinh':'DiTinh','City tour':'CityTour','Di Tour':'DiTour'};
+const VEHICLE_GROUP_IDS = {'':'TatCa','Xe thuong':'XeThuong','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'XeSang','Xe to':'XeTo','Xe khac':'XeKhac'};
+const TRIP_TYPE_IDS = {'':'TatCa','San bay':'SanBay','Di tinh':'DiTinh','City tour':'CityTour','Di Tour':'DiTour'};
 
 function setVehicleSub(v) {
   currentVehicleSub = v;
@@ -2544,8 +2569,8 @@ function renderBookings() {
     if (search && !b.phone.includes(search)) return false;
     if (!passesTimeFilter(b)) return false;
     if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
-    if (currentMainTab === 'vehicle') return (b.vehicleGroup||'Xe khac') === currentVehicleSub;
-    if (currentMainTab === 'triploai') return b.tripType === currentTripSub;
+    if (currentMainTab === 'vehicle') return !currentVehicleSub || (b.vehicleGroup||'Xe khac') === currentVehicleSub;
+    if (currentMainTab === 'triploai') return !currentTripSub || b.tripType === currentTripSub;
     return true; // 'all' — mọi booking trong kỳ đã chọn, mới nhất lên đầu
   });
   if (currentMainTab === 'all') {

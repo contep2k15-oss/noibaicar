@@ -303,6 +303,10 @@
             <label>Giá VP</label>
             <input type="text" id="price-client" placeholder="vd: 400k — để trống nếu không gửi giá cho khách">
           </div>
+          <div class="field">
+            <label>Giá điều</label>
+            <input type="text" id="price-driver" placeholder="vd: 350k — để trống thì tự nhận diện từ tin nháp">
+          </div>
           <div class="check-row">
             <label class="check-item">
               <input type="checkbox" id="cb-bien-ten">
@@ -453,6 +457,13 @@
         <button class="filter-chip sub" id="sub-veh-XeTo" onclick="setVehicleSub('Xe to')">Xe to</button>
         <button class="filter-chip sub" id="sub-veh-XeKhac" onclick="setVehicleSub('Xe khac')">Xe khác</button>
       </div>
+      <div class="filter-bar sub-bar" id="sub-vehicle-vip-row" style="display:none">
+        <button class="filter-chip sub active" id="sub-vehvip-TatCa" onclick="setVehicleVipSub('')">Tất cả Xe Vip</button>
+        <button class="filter-chip sub" id="sub-vehvip-VF9" onclick="setVehicleVipSub('VF9')">VF9</button>
+        <button class="filter-chip sub" id="sub-vehvip-Carnival" onclick="setVehicleVipSub('Carnival')">Carnival</button>
+        <button class="filter-chip sub" id="sub-vehvip-Limousine" onclick="setVehicleVipSub('Limousine')">Limousine</button>
+        <button class="filter-chip sub" id="sub-vehvip-XeSang" onclick="setVehicleVipSub('Xe Sang')">Xe Sang</button>
+      </div>
     </div>
 
     <div id="body-triploai" style="display:none">
@@ -551,7 +562,11 @@
         <select id="bc-vehicle-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🚙 Tất cả loại xe</option>
           <option value="Xe thuong">Xe thường</option>
-          <option value="Xe Vip">Xe Vip</option>
+          <option value="Xe Vip">Xe Vip (tất cả)</option>
+          <option value="VF9">　↳ VF9</option>
+          <option value="Carnival">　↳ Carnival</option>
+          <option value="Limousine">　↳ Limousine</option>
+          <option value="Xe Sang">　↳ Xe Sang</option>
           <option value="Xe to">Xe to</option>
           <option value="Xe khac">Xe khác</option>
         </select>
@@ -786,6 +801,7 @@
         </label>
       </div>
     </div>
+    <button class="btn-sm" style="margin-top:8px;width:100%;padding:9px" onclick="testTelegram()">🔔 Gửi thử tin nhắn Telegram</button>
       </div>
     </div>
 
@@ -869,7 +885,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.3';
+const APP_VERSION = '16.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1152,6 +1168,7 @@ let currentTimeSub = 'all';
 let currentTimeRangeFrom = '';
 let currentTimeRangeTo = '';
 let currentVehicleSub = '';
+let currentVehicleVipSub = '';
 let currentTripSub = '';
 let currentDetailId = null;
 let lastProcessed = null;
@@ -1279,6 +1296,26 @@ function loadTeleConfig() {
   if (nn && cfg.notifyNew === false) nn.checked = false;
   const nu = document.getElementById('tele-notify-unassigned');
   if (nu && cfg.notifyUnassigned === false) nu.checked = false;
+}
+
+async function testTelegram() {
+  if (!sheetUrl) { showToast('⚠️ Chưa có link trang tính'); return; }
+  showToast('⏳ Đang gửi thử...');
+  try {
+    const res = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'testTelegram' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('✓ Đã gửi — kiểm tra Telegram xem đã nhận chưa');
+    } else {
+      showToast('❌ ' + (data.error || 'Gửi thất bại'));
+    }
+  } catch (e) {
+    showToast('❌ Lỗi kết nối: ' + e.message);
+  }
 }
 
 function scheduleAutoSync() {
@@ -1459,6 +1496,7 @@ async function processAll() {
   if (!selectedTripType){ showToast('⚠️ Vui lòng chọn Loại hình (Sân bay/Đi tỉnh/City tour/Đi Tour)'); return; }
 
   const priceVP = document.getElementById('price-client').value.trim();
+  const priceDriverInput = document.getElementById('price-driver').value.trim();
   const bienTen = document.getElementById('cb-bien-ten').checked;
   const isTK = document.getElementById('cb-tk').checked;
   const isCK = document.getElementById('cb-ck').checked;
@@ -1476,6 +1514,7 @@ async function processAll() {
 
 TIN NHÁP: "${draft}"
 GIÁ VP: "${priceVP||'không có'}"
+GIÁ ĐIỀU (nhập tay — nếu có thì LUÔN dùng đúng giá trị này cho priceDriver, không tự suy diễn khác đi; nếu "không có" thì tự nhận diện giá điều xe từ tin nháp, để trống nếu tin nháp cũng không đề cập): "${priceDriverInput||'không có'}"
 BIỂN TÊN: ${bienTen?'có':'không'}
 TIỀN TỐ GIÁ: "${giaPrefix}"
 HIỂN THỊ GIÁ VP CHO KHÁCH: ${showGiaVP?'có':'không'}
@@ -1573,7 +1612,7 @@ TUYỆT ĐỐI không tên khách, SĐT, giá VP trong tin điều xe.
 
 2. "confirm_vi": theo format VI trên.
 3. "confirm_en": theo format EN trên.
-4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","vehicleGroup":"MỘT trong: Xe thuong | VF9 | Carnival | Limousine | Xe Sang | Xe to | Xe khac — theo quy tắc NHÓM LOẠI XE ở trên","priceDriver":"","priceVP":"${priceVP}"}
+4. "meta": {"name":"","phone":"","date":"DD/MM/YYYY — nếu không có dùng ngày hôm nay ${today}","pickupTime":"HH:MM (24h) — LUÔN điền nếu xác định được giờ: với chuyến ĐÓN sân bay dùng Giờ dự hạ, với TIỄN sân bay/nội địa dùng Giờ đón. Để trống CHỈ khi tin nháp không có bất kỳ thông tin giờ nào.","route":"điểm đón ngắn → điểm đến ngắn","vehicle":"","vehicleGroup":"MỘT trong: Xe thuong | VF9 | Carnival | Limousine | Xe Sang | Xe to | Xe khac — theo quy tắc NHÓM LOẠI XE ở trên","priceDriver":"${priceDriverInput || 'giá điều xe nhận diện được từ tin nháp (nếu tin nháp có đề cập), để trống nếu tin nháp không đề cập'}","priceVP":"${priceVP}"}
 
 Trả về JSON object thuần không markdown (1 đơn duy nhất):
 {"driver":"...","confirm_vi":"...","confirm_en":"...","meta":{...}}`;
@@ -1951,6 +1990,29 @@ function setVehicleSub(v) {
   Object.keys(VEHICLE_GROUP_IDS).forEach(function(x) {
     document.getElementById('sub-veh-'+VEHICLE_GROUP_IDS[x]).classList.toggle('active', x===v);
   });
+  // "Xe Vip" là nhóm gộp hiển thị (VF9/Carnival/Limousine/Xe Sang) — khi chọn tab này,
+  // hiện thêm 1 hàng chip con để có thể lọc đúng 1 loại xe cụ thể thay vì chỉ xem gộp chung.
+  const vipRow = document.getElementById('sub-vehicle-vip-row');
+  if (v === 'Xe Vip') {
+    vipRow.style.display = 'flex';
+  } else {
+    vipRow.style.display = 'none';
+    currentVehicleVipSub = '';
+    document.getElementById('sub-vehvip-TatCa').classList.add('active');
+    ['VF9','Carnival','Limousine','XeSang'].forEach(function(id) {
+      document.getElementById('sub-vehvip-'+id).classList.remove('active');
+    });
+  }
+  renderBookings();
+}
+
+const VEHICLE_VIP_SUB_IDS = {'':'TatCa','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'XeSang'};
+
+function setVehicleVipSub(v) {
+  currentVehicleVipSub = v;
+  Object.keys(VEHICLE_VIP_SUB_IDS).forEach(function(x) {
+    document.getElementById('sub-vehvip-'+VEHICLE_VIP_SUB_IDS[x]).classList.toggle('active', x===v);
+  });
   renderBookings();
 }
 
@@ -1982,7 +2044,11 @@ function renderBookings() {
     if (search && !b.phone.includes(search)) return false;
     if (!passesTimeFilter(b)) return false;
     if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
-    if (currentMainTab === 'vehicle') return !currentVehicleSub || normalizeVehicleGroup(b.vehicleGroup) === currentVehicleSub;
+    if (currentMainTab === 'vehicle') {
+      if (!currentVehicleSub) return true;
+      if (currentVehicleSub === 'Xe Vip' && currentVehicleVipSub) return b.vehicleGroup === currentVehicleVipSub;
+      return normalizeVehicleGroup(b.vehicleGroup) === currentVehicleSub;
+    }
     if (currentMainTab === 'triploai') return !currentTripSub || b.tripType === currentTripSub;
     return true; // 'all' — mọi booking trong kỳ đã chọn, mới nhất lên đầu
   });
@@ -2114,6 +2180,7 @@ function openDetail(id) {
   }
   html += '<div style="border-top:.5px solid var(--gb);margin-top:4px;padding-top:6px"></div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
+  if (b.priceDriver) html += '<div style="font-size:13px;color:var(--text2)">🚗 Giá điều: <b style="color:var(--red)">'+formatMoney(b.priceDriver)+'</b></div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
   html += '<div style="border-top:.5px solid var(--gb);margin-top:4px;padding-top:6px;display:flex;align-items:center;gap:8px">';
@@ -3377,7 +3444,7 @@ function renderBaoCao() {
   });
 
   // Theo Loại xe
-  const VEHICLE_GROUP_LABELS = {'Xe thuong':'Xe thường','Xe Vip':'Xe Vip','Xe to':'Xe to','Xe khac':'Xe khác'};
+  const VEHICLE_GROUP_LABELS = {'Xe thuong':'Xe thường','Xe Vip':'Xe Vip (tất cả)','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'Xe Sang','Xe to':'Xe to','Xe khac':'Xe khác'};
   const vehicleStats = {};
   list.forEach(function(b) {
     const g = normalizeVehicleGroup(b.vehicleGroup);
@@ -3443,7 +3510,10 @@ function renderBaoCao() {
     }
   } else if (bcMainTab === 'vehicle') {
     if (vehicleSel) {
-      const subList = list.filter(function(b){ return normalizeVehicleGroup(b.vehicleGroup) === vehicleSel; });
+      const isSpecificVip = ['VF9','Carnival','Limousine','Xe Sang'].includes(vehicleSel);
+      const subList = list.filter(function(b){
+        return isSpecificVip ? b.vehicleGroup === vehicleSel : normalizeVehicleGroup(b.vehicleGroup) === vehicleSel;
+      });
       html += '<div class="bc-section">🚙 '+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'</div>';
       html += buildOverviewCardsHtml(subList);
     } else {

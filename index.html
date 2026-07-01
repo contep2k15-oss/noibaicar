@@ -396,7 +396,11 @@
       <button class="filter-chip sub" id="sub-time-custom" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
     </div>
     <div class="sub-date-wrap" id="sub-time-datewrap" style="display:none">
-      <input type="date" id="sub-time-date-input" onchange="onCustomDatePicked()">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="date" id="sub-time-date-from" onchange="onCustomDateRangePicked()" style="flex:1">
+        <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+        <input type="date" id="sub-time-date-to" onchange="onCustomDateRangePicked()" style="flex:1">
+      </div>
     </div>
     <div class="filter-bar sub-bar" id="sub-vehicle-row" style="display:none">
       <button class="filter-chip sub active" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
@@ -726,7 +730,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.4';
+const APP_VERSION = '15.5';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1007,7 +1011,8 @@ let bookings = JSON.parse(localStorage.getItem('nbc_bookings') || '[]');
 let rooms = JSON.parse(localStorage.getItem('nbc_rooms') || '[]');
 let currentMainTab = 'newest';
 let currentTimeSub = 'today';
-let currentTimeCustomDate = '';
+let currentTimeRangeFrom = '';
+let currentTimeRangeTo = '';
 let currentVehicleSub = 'Xe thuong';
 let currentTripSub = 'San bay';
 let currentDetailId = null;
@@ -2342,19 +2347,30 @@ function setTimeSub(t) {
   });
   document.getElementById('sub-time-datewrap').style.display = (t==='custom') ? 'block' : 'none';
   if (t === 'custom') {
-    const inp = document.getElementById('sub-time-date-input');
+    const fromInp = document.getElementById('sub-time-date-from');
+    const toInp = document.getElementById('sub-time-date-to');
     const now = new Date();
     const maxD = now.toISOString().slice(0,10);
     const minDate = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
-    inp.max = maxD;
-    inp.min = minDate.toISOString().slice(0,10);
-    if (!inp.value) { inp.value = maxD; currentTimeCustomDate = maxD; }
+    const minD = minDate.toISOString().slice(0,10);
+    fromInp.max = maxD; fromInp.min = minD;
+    toInp.max = maxD; toInp.min = minD;
+    if (!fromInp.value) { fromInp.value = minD; currentTimeRangeFrom = minD; }
+    if (!toInp.value) { toInp.value = maxD; currentTimeRangeTo = maxD; }
   }
   renderBookings();
 }
 
-function onCustomDatePicked() {
-  currentTimeCustomDate = document.getElementById('sub-time-date-input').value;
+function onCustomDateRangePicked() {
+  const fromInp = document.getElementById('sub-time-date-from');
+  const toInp = document.getElementById('sub-time-date-to');
+  currentTimeRangeFrom = fromInp.value;
+  currentTimeRangeTo = toInp.value;
+  // Đảm bảo "đến" không nhỏ hơn "từ" — nếu ngược thì hoán đổi cho người dùng
+  if (currentTimeRangeFrom && currentTimeRangeTo && currentTimeRangeFrom > currentTimeRangeTo) {
+    const tmp = fromInp.value; fromInp.value = toInp.value; toInp.value = tmp;
+    currentTimeRangeFrom = fromInp.value; currentTimeRangeTo = toInp.value;
+  }
   renderBookings();
 }
 
@@ -2382,18 +2398,18 @@ function renderBookings() {
   const now = new Date();
   const todayStr = String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
-  let customDateStr = '';
-  if (currentTimeCustomDate) {
-    const parts = currentTimeCustomDate.split('-'); // YYYY-MM-DD
-    if (parts.length === 3) customDateStr = parts[2]+'/'+parts[1]+'/'+parts[0];
-  }
   let filtered = bookings.filter(b => {
     if (search && !b.phone.includes(search)) return false;
     if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
     if (currentMainTab === 'time') {
       if (currentTimeSub === 'today') return fmtDate(b.date) === todayStr;
       if (currentTimeSub === 'month') return fmtDate(b.date).endsWith(monthStr);
-      if (currentTimeSub === 'custom') return customDateStr && fmtDate(b.date) === customDateStr;
+      if (currentTimeSub === 'custom') {
+        if (!currentTimeRangeFrom || !currentTimeRangeTo) return false;
+        const bDateISO = dmyToISO(fmtDate(b.date));
+        if (!bDateISO) return false;
+        return bDateISO >= currentTimeRangeFrom && bDateISO <= currentTimeRangeTo;
+      }
       return true;
     }
     if (currentMainTab === 'vehicle') return (b.vehicleGroup||'Xe khac') === currentVehicleSub;
@@ -3573,6 +3589,15 @@ function parseCreatedAt(val) {
   const m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})/);
   if (!m) return 0;
   return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime();
+}
+
+// Chuyen chuoi ngay "DD/MM/YYYY" thanh "YYYY-MM-DD" de so sanh voi gia tri <input type=date>;
+// tra ve '' neu khong parse duoc (vd b.date rong hoac dinh dang la).
+function dmyToISO(val) {
+  if (!val || typeof val !== 'string') return '';
+  const m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return '';
+  return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
 }
 
 // Bo dong tieu de "Xac nhan Booking:" khoi confirmVI khi hien thi trong card

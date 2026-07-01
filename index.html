@@ -384,38 +384,85 @@
       </div>
     </div>
     <div class="filter-bar" style="padding-top:10px" id="booking-main-tabs">
-      <button class="filter-chip active" id="mtab-newest" onclick="setMainTab('newest')">🕐 Mới nhất</button>
+      <button class="filter-chip active" id="mtab-all" onclick="setMainTab('all')">🕐 Tất cả</button>
       <button class="filter-chip" id="mtab-chuadieu" onclick="setMainTab('chuadieu')">🚗 Chưa điều</button>
-      <button class="filter-chip" id="mtab-time" onclick="setMainTab('time')">📅 Thời gian</button>
       <button class="filter-chip" id="mtab-vehicle" onclick="setMainTab('vehicle')">🚙 Loại xe</button>
       <button class="filter-chip" id="mtab-triploai" onclick="setMainTab('triploai')">🗂️ Loại hình</button>
     </div>
-    <div class="filter-bar sub-bar" id="sub-time-row" style="display:none">
-      <button class="filter-chip sub active" id="sub-time-today" onclick="setTimeSub('today')">Hôm nay</button>
-      <button class="filter-chip sub" id="sub-time-month" onclick="setTimeSub('month')">Tháng này</button>
-      <button class="filter-chip sub" id="sub-time-custom" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
-    </div>
-    <div class="sub-date-wrap" id="sub-time-datewrap" style="display:none">
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="date" id="sub-time-date-from" onchange="onCustomDateRangePicked()" style="flex:1">
-        <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
-        <input type="date" id="sub-time-date-to" onchange="onCustomDateRangePicked()" style="flex:1">
+
+    <div id="body-all">
+      <div class="filter-bar sub-bar" id="sub-time-row-all">
+        <button class="filter-chip sub active" id="sub-time-today-all" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip sub" id="sub-time-month-all" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip sub" id="sub-time-custom-all" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      </div>
+      <div class="sub-date-wrap" id="sub-time-datewrap-all" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="sub-time-date-from-all" onchange="onCustomDateRangePicked('all')" style="flex:1">
+          <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+          <input type="date" id="sub-time-date-to-all" onchange="onCustomDateRangePicked('all')" style="flex:1">
+        </div>
       </div>
     </div>
-    <div class="filter-bar sub-bar" id="sub-vehicle-row" style="display:none">
-      <button class="filter-chip sub active" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
-      <button class="filter-chip sub" id="sub-veh-VF9" onclick="setVehicleSub('VF9')">VF9</button>
-      <button class="filter-chip sub" id="sub-veh-Carnival" onclick="setVehicleSub('Carnival')">Carnival</button>
-      <button class="filter-chip sub" id="sub-veh-Limousine" onclick="setVehicleSub('Limousine')">Limousine</button>
-      <button class="filter-chip sub" id="sub-veh-XeSang" onclick="setVehicleSub('Xe Sang')">Xe Sang</button>
-      <button class="filter-chip sub" id="sub-veh-XeTo" onclick="setVehicleSub('Xe to')">Xe to</button>
-      <button class="filter-chip sub" id="sub-veh-XeKhac" onclick="setVehicleSub('Xe khac')">Xe khác</button>
+
+    <div id="body-chuadieu" style="display:none">
+      <div class="filter-bar sub-bar" id="sub-time-row-chuadieu">
+        <button class="filter-chip sub active" id="sub-time-today-chuadieu" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip sub" id="sub-time-month-chuadieu" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip sub" id="sub-time-custom-chuadieu" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      </div>
+      <div class="sub-date-wrap" id="sub-time-datewrap-chuadieu" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="sub-time-date-from-chuadieu" onchange="onCustomDateRangePicked('chuadieu')" style="flex:1">
+          <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+          <input type="date" id="sub-time-date-to-chuadieu" onchange="onCustomDateRangePicked('chuadieu')" style="flex:1">
+        </div>
+      </div>
     </div>
-    <div class="filter-bar sub-bar" id="sub-triploai-row" style="display:none">
-      <button class="filter-chip sub active" id="sub-tl-SanBay" onclick="setTripSub('San bay')">✈️ Sân bay</button>
-      <button class="filter-chip sub" id="sub-tl-DiTinh" onclick="setTripSub('Di tinh')">🛣️ Đi tỉnh</button>
-      <button class="filter-chip sub" id="sub-tl-CityTour" onclick="setTripSub('City tour')">🏙️ City tour</button>
-      <button class="filter-chip sub" id="sub-tl-DiTour" onclick="setTripSub('Di Tour')">🗺️ Đi Tour</button>
+
+    <div id="body-vehicle" style="display:none">
+      <div class="filter-bar sub-bar" id="sub-time-row-vehicle">
+        <button class="filter-chip sub active" id="sub-time-today-vehicle" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip sub" id="sub-time-month-vehicle" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip sub" id="sub-time-custom-vehicle" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      </div>
+      <div class="sub-date-wrap" id="sub-time-datewrap-vehicle" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="sub-time-date-from-vehicle" onchange="onCustomDateRangePicked('vehicle')" style="flex:1">
+          <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+          <input type="date" id="sub-time-date-to-vehicle" onchange="onCustomDateRangePicked('vehicle')" style="flex:1">
+        </div>
+      </div>
+      <div class="filter-bar sub-bar" id="sub-vehicle-row">
+        <button class="filter-chip sub active" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
+        <button class="filter-chip sub" id="sub-veh-VF9" onclick="setVehicleSub('VF9')">VF9</button>
+        <button class="filter-chip sub" id="sub-veh-Carnival" onclick="setVehicleSub('Carnival')">Carnival</button>
+        <button class="filter-chip sub" id="sub-veh-Limousine" onclick="setVehicleSub('Limousine')">Limousine</button>
+        <button class="filter-chip sub" id="sub-veh-XeSang" onclick="setVehicleSub('Xe Sang')">Xe Sang</button>
+        <button class="filter-chip sub" id="sub-veh-XeTo" onclick="setVehicleSub('Xe to')">Xe to</button>
+        <button class="filter-chip sub" id="sub-veh-XeKhac" onclick="setVehicleSub('Xe khac')">Xe khác</button>
+      </div>
+    </div>
+
+    <div id="body-triploai" style="display:none">
+      <div class="filter-bar sub-bar" id="sub-time-row-triploai">
+        <button class="filter-chip sub active" id="sub-time-today-triploai" onclick="setTimeSub('today')">Hôm nay</button>
+        <button class="filter-chip sub" id="sub-time-month-triploai" onclick="setTimeSub('month')">Tháng này</button>
+        <button class="filter-chip sub" id="sub-time-custom-triploai" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+      </div>
+      <div class="sub-date-wrap" id="sub-time-datewrap-triploai" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="sub-time-date-from-triploai" onchange="onCustomDateRangePicked('triploai')" style="flex:1">
+          <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+          <input type="date" id="sub-time-date-to-triploai" onchange="onCustomDateRangePicked('triploai')" style="flex:1">
+        </div>
+      </div>
+      <div class="filter-bar sub-bar" id="sub-triploai-row">
+        <button class="filter-chip sub active" id="sub-tl-SanBay" onclick="setTripSub('San bay')">✈️ Sân bay</button>
+        <button class="filter-chip sub" id="sub-tl-DiTinh" onclick="setTripSub('Di tinh')">🛣️ Đi tỉnh</button>
+        <button class="filter-chip sub" id="sub-tl-CityTour" onclick="setTripSub('City tour')">🏙️ City tour</button>
+        <button class="filter-chip sub" id="sub-tl-DiTour" onclick="setTripSub('Di Tour')">🗺️ Đi Tour</button>
+      </div>
     </div>
     <div class="results-zone" id="booking-list">
       <div class="empty-state">
@@ -798,7 +845,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.8';
+const APP_VERSION = '15.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1077,7 +1124,7 @@ function doChangePassword() {
 let apiKey = localStorage.getItem('nbc_apikey') || '';
 let bookings = JSON.parse(localStorage.getItem('nbc_bookings') || '[]');
 let rooms = JSON.parse(localStorage.getItem('nbc_rooms') || '[]');
-let currentMainTab = 'newest';
+let currentMainTab = 'all';
 let currentTimeSub = 'today';
 let currentTimeRangeFrom = '';
 let currentTimeRangeTo = '';
@@ -2396,42 +2443,50 @@ function saveToBooking() {
 }
 
 // ===== BOOKING LIST =====
+const BOOKING_TAB_SUFFIXES = ['all','chuadieu','vehicle','triploai'];
+
 function setMainTab(t) {
   currentMainTab = t;
-  ['newest','chuadieu','time','vehicle','triploai'].forEach(x => {
+  BOOKING_TAB_SUFFIXES.forEach(x => {
     document.getElementById('mtab-'+x).classList.toggle('active', x===t);
+    document.getElementById('body-'+x).style.display = (x===t) ? 'block' : 'none';
   });
-  document.getElementById('sub-time-row').style.display = (t==='time') ? 'flex' : 'none';
-  document.getElementById('sub-time-datewrap').style.display = (t==='time' && currentTimeSub==='custom') ? 'block' : 'none';
-  document.getElementById('sub-vehicle-row').style.display = (t==='vehicle') ? 'flex' : 'none';
-  document.getElementById('sub-triploai-row').style.display = (t==='triploai') ? 'flex' : 'none';
   renderBookings();
 }
 
 function setTimeSub(t) {
   currentTimeSub = t;
-  ['today','month','custom'].forEach(x => {
-    document.getElementById('sub-time-'+x).classList.toggle('active', x===t);
+  BOOKING_TAB_SUFFIXES.forEach(function(suf) {
+    ['today','month','custom'].forEach(function(x) {
+      const el = document.getElementById('sub-time-'+x+'-'+suf);
+      if (el) el.classList.toggle('active', x===t);
+    });
+    const wrap = document.getElementById('sub-time-datewrap-'+suf);
+    if (wrap) wrap.style.display = (t==='custom') ? 'block' : 'none';
   });
-  document.getElementById('sub-time-datewrap').style.display = (t==='custom') ? 'block' : 'none';
   if (t === 'custom') {
-    const fromInp = document.getElementById('sub-time-date-from');
-    const toInp = document.getElementById('sub-time-date-to');
     const now = new Date();
     const maxD = now.toISOString().slice(0,10);
     const minDate = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
     const minD = minDate.toISOString().slice(0,10);
-    fromInp.max = maxD; fromInp.min = minD;
-    toInp.max = maxD; toInp.min = minD;
-    if (!fromInp.value) { fromInp.value = minD; currentTimeRangeFrom = minD; }
-    if (!toInp.value) { toInp.value = maxD; currentTimeRangeTo = maxD; }
+    BOOKING_TAB_SUFFIXES.forEach(function(suf) {
+      const fromInp = document.getElementById('sub-time-date-from-'+suf);
+      const toInp = document.getElementById('sub-time-date-to-'+suf);
+      if (!fromInp || !toInp) return;
+      fromInp.max = maxD; fromInp.min = minD;
+      toInp.max = maxD; toInp.min = minD;
+      if (!fromInp.value) fromInp.value = currentTimeRangeFrom || minD;
+      if (!toInp.value) toInp.value = currentTimeRangeTo || maxD;
+    });
+    if (!currentTimeRangeFrom) currentTimeRangeFrom = minD;
+    if (!currentTimeRangeTo) currentTimeRangeTo = maxD;
   }
   renderBookings();
 }
 
-function onCustomDateRangePicked() {
-  const fromInp = document.getElementById('sub-time-date-from');
-  const toInp = document.getElementById('sub-time-date-to');
+function onCustomDateRangePicked(suffix) {
+  const fromInp = document.getElementById('sub-time-date-from-'+suffix);
+  const toInp = document.getElementById('sub-time-date-to-'+suffix);
   currentTimeRangeFrom = fromInp.value;
   currentTimeRangeTo = toInp.value;
   // Đảm bảo "đến" không nhỏ hơn "từ" — nếu ngược thì hoán đổi cho người dùng
@@ -2439,6 +2494,14 @@ function onCustomDateRangePicked() {
     const tmp = fromInp.value; fromInp.value = toInp.value; toInp.value = tmp;
     currentTimeRangeFrom = fromInp.value; currentTimeRangeTo = toInp.value;
   }
+  // Đồng bộ giá trị sang các bản sao ở tab khác
+  BOOKING_TAB_SUFFIXES.forEach(function(suf) {
+    if (suf === suffix) return;
+    const fi = document.getElementById('sub-time-date-from-'+suf);
+    const ti = document.getElementById('sub-time-date-to-'+suf);
+    if (fi) fi.value = currentTimeRangeFrom;
+    if (ti) ti.value = currentTimeRangeTo;
+  });
   renderBookings();
 }
 
@@ -2466,25 +2529,26 @@ function renderBookings() {
   const now = new Date();
   const todayStr = String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+  function passesTimeFilter(b) {
+    if (currentTimeSub === 'today') return fmtDate(b.date) === todayStr;
+    if (currentTimeSub === 'month') return fmtDate(b.date).endsWith(monthStr);
+    if (currentTimeSub === 'custom') {
+      if (!currentTimeRangeFrom || !currentTimeRangeTo) return false;
+      const bDateISO = dmyToISO(fmtDate(b.date));
+      if (!bDateISO) return false;
+      return bDateISO >= currentTimeRangeFrom && bDateISO <= currentTimeRangeTo;
+    }
+    return true;
+  }
   let filtered = bookings.filter(b => {
     if (search && !b.phone.includes(search)) return false;
+    if (!passesTimeFilter(b)) return false;
     if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
-    if (currentMainTab === 'time') {
-      if (currentTimeSub === 'today') return fmtDate(b.date) === todayStr;
-      if (currentTimeSub === 'month') return fmtDate(b.date).endsWith(monthStr);
-      if (currentTimeSub === 'custom') {
-        if (!currentTimeRangeFrom || !currentTimeRangeTo) return false;
-        const bDateISO = dmyToISO(fmtDate(b.date));
-        if (!bDateISO) return false;
-        return bDateISO >= currentTimeRangeFrom && bDateISO <= currentTimeRangeTo;
-      }
-      return true;
-    }
     if (currentMainTab === 'vehicle') return (b.vehicleGroup||'Xe khac') === currentVehicleSub;
     if (currentMainTab === 'triploai') return b.tripType === currentTripSub;
-    return true; // 'newest' — all bookings, newest first (default order)
+    return true; // 'all' — mọi booking trong kỳ đã chọn, mới nhất lên đầu
   });
-  if (currentMainTab === 'newest') {
+  if (currentMainTab === 'all') {
     filtered = filtered.slice().sort(function(a, b2) {
       return parseCreatedAt(b2.createdAt) - parseCreatedAt(a.createdAt);
     });

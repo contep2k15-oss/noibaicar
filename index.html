@@ -449,10 +449,7 @@
       <div class="filter-bar sub-bar" id="sub-vehicle-row">
         <button class="filter-chip sub active" id="sub-veh-TatCa" onclick="setVehicleSub('')">Tất cả</button>
         <button class="filter-chip sub" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
-        <button class="filter-chip sub" id="sub-veh-VF9" onclick="setVehicleSub('VF9')">VF9</button>
-        <button class="filter-chip sub" id="sub-veh-Carnival" onclick="setVehicleSub('Carnival')">Carnival</button>
-        <button class="filter-chip sub" id="sub-veh-Limousine" onclick="setVehicleSub('Limousine')">Limousine</button>
-        <button class="filter-chip sub" id="sub-veh-XeSang" onclick="setVehicleSub('Xe Sang')">Xe Sang</button>
+        <button class="filter-chip sub" id="sub-veh-XeVip" onclick="setVehicleSub('Xe Vip')">Xe Vip</button>
         <button class="filter-chip sub" id="sub-veh-XeTo" onclick="setVehicleSub('Xe to')">Xe to</button>
         <button class="filter-chip sub" id="sub-veh-XeKhac" onclick="setVehicleSub('Xe khac')">Xe khác</button>
       </div>
@@ -554,10 +551,7 @@
         <select id="bc-vehicle-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🚙 Tất cả loại xe</option>
           <option value="Xe thuong">Xe thường</option>
-          <option value="VF9">VF9</option>
-          <option value="Carnival">Carnival</option>
-          <option value="Limousine">Limousine</option>
-          <option value="Xe Sang">Xe Sang</option>
+          <option value="Xe Vip">Xe Vip</option>
           <option value="Xe to">Xe to</option>
           <option value="Xe khac">Xe khác</option>
         </select>
@@ -870,7 +864,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.0';
+const APP_VERSION = '16.1';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -2530,7 +2524,15 @@ function onCustomDateRangePicked(suffix) {
   renderBookings();
 }
 
-const VEHICLE_GROUP_IDS = {'':'TatCa','Xe thuong':'XeThuong','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'XeSang','Xe to':'XeTo','Xe khac':'XeKhac'};
+// Gộp hiển thị: dữ liệu gốc (vehicleGroup) vẫn lưu chi tiết từng loại xe do AI nhận diện
+// (VF9/Carnival/Limousine/Xe Sang) — hàm này CHỈ dùng ở tầng giao diện (lọc/thống kê) để
+// gom 4 loại đó lại thành 1 nhóm hiển thị "Xe Vip" cho gọn, không đổi dữ liệu đã lưu.
+function normalizeVehicleGroup(g) {
+  if (g === 'VF9' || g === 'Carnival' || g === 'Limousine' || g === 'Xe Sang') return 'Xe Vip';
+  return g || 'Xe khac';
+}
+
+const VEHICLE_GROUP_IDS = {'':'TatCa','Xe thuong':'XeThuong','Xe Vip':'XeVip','Xe to':'XeTo','Xe khac':'XeKhac'};
 const TRIP_TYPE_IDS = {'':'TatCa','San bay':'SanBay','Di tinh':'DiTinh','City tour':'CityTour','Di Tour':'DiTour'};
 
 function setVehicleSub(v) {
@@ -2569,7 +2571,7 @@ function renderBookings() {
     if (search && !b.phone.includes(search)) return false;
     if (!passesTimeFilter(b)) return false;
     if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
-    if (currentMainTab === 'vehicle') return !currentVehicleSub || (b.vehicleGroup||'Xe khac') === currentVehicleSub;
+    if (currentMainTab === 'vehicle') return !currentVehicleSub || normalizeVehicleGroup(b.vehicleGroup) === currentVehicleSub;
     if (currentMainTab === 'triploai') return !currentTripSub || b.tripType === currentTripSub;
     return true; // 'all' — mọi booking trong kỳ đã chọn, mới nhất lên đầu
   });
@@ -3964,10 +3966,10 @@ function renderBaoCao() {
   });
 
   // Theo Loại xe
-  const VEHICLE_GROUP_LABELS = {'Xe thuong':'Xe thường','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'Xe Sang','Xe to':'Xe to','Xe khac':'Xe khác'};
+  const VEHICLE_GROUP_LABELS = {'Xe thuong':'Xe thường','Xe Vip':'Xe Vip','Xe to':'Xe to','Xe khac':'Xe khác'};
   const vehicleStats = {};
   list.forEach(function(b) {
-    const g = b.vehicleGroup || 'Xe khac';
+    const g = normalizeVehicleGroup(b.vehicleGroup);
     if (!vehicleStats[g]) vehicleStats[g] = { count:0, vp:0, cost:0 };
     vehicleStats[g].count++;
     vehicleStats[g].vp += parseMoneyNum(b.priceVP);
@@ -4030,7 +4032,7 @@ function renderBaoCao() {
     }
   } else if (bcMainTab === 'vehicle') {
     if (vehicleSel) {
-      const subList = list.filter(function(b){ return (b.vehicleGroup||'Xe khac') === vehicleSel; });
+      const subList = list.filter(function(b){ return normalizeVehicleGroup(b.vehicleGroup) === vehicleSel; });
       html += '<div class="bc-section">🚙 '+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'</div>';
       html += buildOverviewCardsHtml(subList);
     } else {

@@ -428,16 +428,48 @@
   <!-- ===== TAB: BÁO CÁO ===== -->
   <div class="screen" id="tab-baocao">
     <div style="padding:10px 14px 0;flex-shrink:0;display:flex;flex-direction:column;gap:8px">
-      <div class="filter-bar" style="padding:0">
-        <button class="filter-chip active" id="bc-today" onclick="setBCFilter('today')">Hôm nay</button>
-        <button class="filter-chip" id="bc-week" onclick="setBCFilter('week')">Tuần này</button>
-        <button class="filter-chip" id="bc-month" onclick="setBCFilter('month')">Tháng này</button>
-        <button class="filter-chip" id="bc-all" onclick="setBCFilter('all')">Tất cả</button>
+      <div class="filter-bar" id="bc-main-tabs" style="padding:0">
+        <button class="filter-chip active" id="bcmtab-time" onclick="setBCMainTab('time')">📅 Thời gian</button>
+        <button class="filter-chip" id="bcmtab-room" onclick="setBCMainTab('room')">🏆 Room</button>
+        <button class="filter-chip" id="bcmtab-vehicle" onclick="setBCMainTab('vehicle')">🚙 Loại xe</button>
+        <button class="filter-chip" id="bcmtab-partner" onclick="setBCMainTab('partner')">🤝 Đối tác</button>
       </div>
-      <div style="padding:0 0 4px;display:flex;flex-direction:column;gap:6px">
+
+      <div id="bc-body-time">
+        <div class="filter-bar sub-bar" style="padding:0 0 8px">
+          <button class="filter-chip sub" id="bc-day" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip sub active" id="bc-month" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip sub" id="bc-custom" onclick="setBCFilter('custom')">📆 Lọc</button>
+        </div>
+        <div class="sub-date-wrap" id="bc-datewrap" style="display:none;padding:0">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="bc-date-from" onchange="onBCDateRangePicked()" style="flex:1">
+            <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+            <input type="date" id="bc-date-to" onchange="onBCDateRangePicked()" style="flex:1">
+          </div>
+        </div>
+      </div>
+
+      <div id="bc-body-room" style="display:none">
         <select id="bc-room-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🏆 Tất cả Room</option>
         </select>
+      </div>
+
+      <div id="bc-body-vehicle" style="display:none">
+        <select id="bc-vehicle-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
+          <option value="">🚙 Tất cả loại xe</option>
+          <option value="Xe thuong">Xe thường</option>
+          <option value="VF9">VF9</option>
+          <option value="Carnival">Carnival</option>
+          <option value="Limousine">Limousine</option>
+          <option value="Xe Sang">Xe Sang</option>
+          <option value="Xe to">Xe to</option>
+          <option value="Xe khac">Xe khác</option>
+        </select>
+      </div>
+
+      <div id="bc-body-partner" style="display:none">
         <select id="bc-partner-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🤝 Tất cả đối tác</option>
         </select>
@@ -730,7 +762,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.5';
+const APP_VERSION = '15.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -3508,13 +3540,51 @@ function deletePartnerSettings(id) {
 }
 
 // ===== BÁO CÁO =====
-let bcFilter = 'today';
+let bcMainTab = 'time';
+let bcFilter = 'month'; // Ưu tiên hiển thị theo tháng khi vào trang Báo cáo
+let bcRangeFrom = '';
+let bcRangeTo = '';
+
+function setBCMainTab(t) {
+  bcMainTab = t;
+  ['time','room','vehicle','partner'].forEach(function(x) {
+    document.getElementById('bcmtab-'+x).classList.toggle('active', x===t);
+    document.getElementById('bc-body-'+x).style.display = (x===t) ? 'block' : 'none';
+  });
+}
 
 function setBCFilter(f) {
   bcFilter = f;
-  ['today','week','month','all'].forEach(function(x) {
+  ['day','month','custom'].forEach(function(x) {
     document.getElementById('bc-'+x).classList.toggle('active', x===f);
   });
+  const wrap = document.getElementById('bc-datewrap');
+  wrap.style.display = (f==='custom') ? 'block' : 'none';
+  if (f === 'custom') {
+    const fromInp = document.getElementById('bc-date-from');
+    const toInp = document.getElementById('bc-date-to');
+    const now = new Date();
+    const maxD = now.toISOString().slice(0,10);
+    const minDate = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
+    const minD = minDate.toISOString().slice(0,10);
+    fromInp.max = maxD; fromInp.min = minD;
+    toInp.max = maxD; toInp.min = minD;
+    if (!fromInp.value) { fromInp.value = minD; bcRangeFrom = minD; }
+    if (!toInp.value) { toInp.value = maxD; bcRangeTo = maxD; }
+  }
+  renderBaoCao();
+}
+
+function onBCDateRangePicked() {
+  const fromInp = document.getElementById('bc-date-from');
+  const toInp = document.getElementById('bc-date-to');
+  bcRangeFrom = fromInp.value;
+  bcRangeTo = toInp.value;
+  // Đảm bảo "đến" không nhỏ hơn "từ" — nếu ngược thì hoán đổi cho người dùng
+  if (bcRangeFrom && bcRangeTo && bcRangeFrom > bcRangeTo) {
+    const tmp = fromInp.value; fromInp.value = toInp.value; toInp.value = tmp;
+    bcRangeFrom = fromInp.value; bcRangeTo = toInp.value;
+  }
   renderBaoCao();
 }
 
@@ -3552,16 +3622,13 @@ function filterBookingsForBC() {
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
 
   return bookings.filter(function(b) {
-    if (bcFilter === 'all') return true;
-    if (bcFilter === 'today') return fmtDate(b.date) === todayStr;
+    if (bcFilter === 'day') return fmtDate(b.date) === todayStr;
     if (bcFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
-    if (bcFilter === 'week') {
-      if (!b.date) return false;
-      const parts = fmtDate(b.date).split('/');
-      if (parts.length < 3) return false;
-      const bd = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-      const diff = (now - bd) / (1000*60*60*24);
-      return diff >= 0 && diff < 7;
+    if (bcFilter === 'custom') {
+      if (!bcRangeFrom || !bcRangeTo) return false;
+      const bDateISO = dmyToISO(fmtDate(b.date));
+      if (!bDateISO) return false;
+      return bDateISO >= bcRangeFrom && bDateISO <= bcRangeTo;
     }
     return true;
   });
@@ -3683,6 +3750,7 @@ function renderBaoCao() {
   const list = filterBookingsForBC();
   const el = document.getElementById('baocao-body');
   const roomSel = (document.getElementById('bc-room-filter') || {}).value || '';
+  const vehicleSel = (document.getElementById('bc-vehicle-filter') || {}).value || '';
   const partnerSel = (document.getElementById('bc-partner-filter') || {}).value || '';
 
   if (!list.length) {
@@ -3728,6 +3796,17 @@ function renderBaoCao() {
     }
   });
 
+  // Theo Loại xe
+  const VEHICLE_GROUP_LABELS = {'Xe thuong':'Xe thường','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'Xe Sang','Xe to':'Xe to','Xe khac':'Xe khác'};
+  const vehicleStats = {};
+  list.forEach(function(b) {
+    const g = b.vehicleGroup || 'Xe khac';
+    if (!vehicleStats[g]) vehicleStats[g] = { count:0, vp:0, cost:0 };
+    vehicleStats[g].count++;
+    vehicleStats[g].vp += parseMoneyNum(b.priceVP);
+    vehicleStats[g].cost += parseMoneyNum(b.priceDriver);
+  });
+
   let html = '<div class="bc-grid">';
 
   // Tổng chuyến
@@ -3768,6 +3847,22 @@ function renderBaoCao() {
       html += '</div></div>';
     } else {
       html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu cho Room này trong kỳ.</div></div>';
+    }
+  }
+
+  // Theo Loại xe — chỉ hiển thị nhóm xe được chọn
+  if (vehicleSel) {
+    html += '<div class="bc-section">Theo Loại xe</div>';
+    const s = vehicleStats[vehicleSel];
+    if (s) {
+      html += '<div class="bc-room-row">';
+      html += '<div><div class="bc-room-name">🚙 '+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'</div><div class="bc-sub">'+s.count+' chuyến</div></div>';
+      html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
+      html += '<div class="bc-room-detail" style="color:var(--blue)">💰 '+fmtVND(s.vp)+' doanh thu VP</div>';
+      html += '<div class="bc-room-detail" style="color:var(--red)">🚗 '+fmtVND(s.cost)+' chi phí điều xe</div>';
+      html += '</div></div>';
+    } else {
+      html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu cho Loại xe này trong kỳ.</div></div>';
     }
   }
 

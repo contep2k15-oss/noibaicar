@@ -886,7 +886,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.5';
+const APP_VERSION = '16.6';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1851,13 +1851,27 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
 
 
 // ===== SAVE TO BOOKING =====
+// Sinh mã booking không trùng — TRƯỚC ĐÂY dùng "bookings.length+1" làm số thứ tự. Vấn đề:
+// nếu 1 booking bị xoá đi (vd xoá booking test), độ dài mảng giảm xuống, và booking MỚI tạo
+// sau đó có thể tính ra đúng số thứ tự của booking cũ đã xoá → trùng y hệt mã 1 booking đã
+// từng tồn tại và đã được server thông báo Telegram trước đó. Server vẫn nhớ mã đó "đã thông
+// báo rồi" (kể cả sau khi bị xoá khỏi danh sách) nên bỏ qua luôn booking mới trùng mã — đây là
+// nguyên nhân gốc của lỗi "booking mới im lặng, không báo Telegram" đã gặp phải.
+// Sửa: số thứ tự lấy theo 3 số cuối của THỜI ĐIỂM TẠO (mili-giây), không phụ thuộc số lượng
+// booking hiện có nữa — nên việc xoá bao nhiêu booking cũng không thể khiến mã bị tính trùng.
 function generateBookingId() {
   const now = new Date();
   const d = String(now.getDate()).padStart(2,'0');
   const m = String(now.getMonth()+1).padStart(2,'0');
   const y = String(now.getFullYear()).slice(-2);
-  const seq = String((bookings.length+1)).padStart(3,'0');
-  return `NBC-${d}${m}${y}-${seq}`;
+  const existingIds = new Set(bookings.map(function(b){ return b.id; }));
+  let id, attempt = 0;
+  do {
+    const suffix = String((now.getTime() + attempt) % 1000).padStart(3,'0');
+    id = `NBC-${d}${m}${y}-${suffix}`;
+    attempt++;
+  } while (existingIds.has(id));
+  return id;
 }
 
 function saveToBooking() {

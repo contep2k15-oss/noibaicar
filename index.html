@@ -270,6 +270,7 @@
   .bc-room-money{font-size:13px;font-weight:600;color:var(--gd)}
   .bc-room-detail{font-size:11px;color:var(--text3)}
   .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:var(--gl);color:var(--gt)}
+  .tag.trip{background:#E6F1FB;color:var(--blue)}
 </style>
 </head>
 <body>
@@ -885,7 +886,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.4';
+const APP_VERSION = '16.5';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1524,20 +1525,20 @@ NGÀY HÔM NAY: ${today}
 SĐT: Mọi SĐT trong tin nháp = SĐT khách, LUÔN đưa vào trường số điện thoại.
 
 LOẠI XE:
-- Không có loại xe → bỏ trống, KHÔNG tự thêm
+- Không có loại xe → mặc định "X4C" (KHÔNG bỏ trống)
 - X4C/x4c→X4C, X7C/x7c→X7C, X16C→X16C, X29C→X29C (viết hoa)
 - Carnival, Limousine, Custin, VF9, Innova, Fortuner, Sedan, SUV... giữ nguyên
 - Tin xác nhận: X4C→"Sedan", X7C→"Xe 7 chỗ"/"7-seater", X16C→"Xe 16 chỗ"/"16-seater", X29C→"Xe 29 chỗ"/"29-seater"
 - Nếu BIỂN TÊN=có → thêm ", biển tên" sau loại xe trong tin điều xe
 
 NHÓM LOẠI XE (vehicleGroup) — tự phân loại theo loại xe nhận diện được trong tin nháp, dùng ĐÚNG MỘT trong các giá trị sau (không tự bịa giá trị khác):
-- "Xe thuong": khi loại xe là X4C, X5C, X7C (hoặc các biến thể viết thường/khoảng trắng tương đương)
+- "Xe thuong": khi loại xe là X4C, X5C, X7C (hoặc các biến thể viết thường/khoảng trắng tương đương), hoặc khi tin nháp KHÔNG ghi rõ loại xe (mặc định X4C → thuộc nhóm này)
 - "VF9": khi loại xe là VF9
 - "Carnival": khi loại xe là Carnival
 - "Limousine": khi loại xe là Limousine
 - "Xe Sang": khi loại xe là Mercedes, BMW, Lexus, Alphard, hoặc các dòng xe sang/đắt tiền tương tự khác
 - "Xe to": khi loại xe là X16C, X29C, X35C, X45C
-- "Xe khac": khi tin nháp KHÔNG ghi rõ loại xe, hoặc loại xe không khớp với bất kỳ nhóm nào ở trên
+- "Xe khac": khi loại xe không khớp với bất kỳ nhóm nào ở trên
 
 GIỜ: Tin điều xe: HH:MM (24h). Tin xác nhận VI: thêm buổi (sáng/trưa/chiều/tối). EN: AM/PM 12h.
 
@@ -1604,7 +1605,7 @@ KHÔNG có lời chào, lời kết, câu hỏi. Chỉ thông tin thuần.
 
 === ĐẦU RA ===
 1. "driver": 3 dòng, PHẢI cách nhau bằng 1 dòng trống (dùng \n\n giữa các dòng):
-DÒNG 1: ngày+loại xe (hôm nay không có xe thì bỏ dòng 1). Ngày khác: DD/MM [loại xe nếu có].
+DÒNG 1: ngày+loại xe. Hôm nay: chỉ ghi loại xe (không ghi ngày). Ngày khác: DD/MM + loại xe.
 DÒNG 2: Có bay=[mã bay HH:MM hạ TX ➜ điểm đến bỏ số nhà]. Không bay=[HH:MM điểm đón bỏ số nhà ➜ điểm đến]. Nhiều điểm đón dùng +.
 DÒNG 3: [${giaPrefix}giá ngắn]
 Ví dụ đúng: "X7C\n\nVN616 06:00 hạ T2 ➜ Cầu Giấy\n\nVP300k". QUAN TRỌNG: Giữa các dòng PHẢI có \n\n (2 ký tự xuống dòng), không phải \n (1 ký tự).
@@ -1816,8 +1817,8 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     date: fmtDate(meta.date || ''),
     pickupTime: meta.pickupTime || '',
     route: meta.route || '',
-    vehicle: meta.vehicle || '',
-    vehicleGroup: meta.vehicleGroup || 'Xe khac',
+    vehicle: meta.vehicle || 'X4C',
+    vehicleGroup: meta.vehicleGroup || 'Xe thuong',
     tripType: selectedTripType || '',
     priceDriver: meta.priceDriver || '',
     priceVP: meta.priceVP || '',
@@ -1868,7 +1869,7 @@ function saveToBooking() {
     phone: lastProcessed.phone || '',
     date: lastProcessed.date || '',
     route: lastProcessed.route || '',
-    vehicle: lastProcessed.vehicle || '',
+    vehicle: lastProcessed.vehicle || 'X4C',
     priceDriver: lastProcessed.priceDriver || '',
     priceVP: lastProcessed.priceVP || '',
     driverMsg: lastProcessed.driverMsg || '',
@@ -2063,13 +2064,17 @@ function renderBookings() {
     return;
   }
   let html = '';
+  const TRIP_TYPE_TAG_LABELS = {'San bay':'✈️ Sân bay','Di tinh':'🛣️ Đi tỉnh','City tour':'🏙️ City tour','Di Tour':'🗺️ Đi Tour'};
   filtered.forEach(function(b) {
     const selRoom = rooms.find(function(r){ return r.name === b.room; });
     const pointsAmt = selRoom && b.points ? (parseFloat(b.points) * selRoom.rate).toLocaleString('vi-VN') + ' VND' : '';
     html += '<div class="booking-card">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start" onclick="openDetail(\''+b.id+'\')">';
     html += '<div class="booking-id">'+b.id+'</div>';
-    html += '<span class="tag">'+(b.vehicle||'—')+'</span></div>';
+    html += '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">';
+    if (b.tripType) html += '<span class="tag trip">'+(TRIP_TYPE_TAG_LABELS[b.tripType]||b.tripType)+'</span>';
+    html += '<span class="tag">'+(b.vehicle||'—')+'</span>';
+    html += '</div></div>';
     html += '<div class="booking-name" onclick="openDetail(\''+b.id+'\')">'+b.name+(b.phone?' • '+b.phone:'')+'</div>';
     html += '<div class="booking-route" onclick="openDetail(\''+b.id+'\')">📍 '+(b.route||'—')+'</div>';
     html += '<div class="booking-footer">';
@@ -2447,10 +2452,13 @@ function showMsgPopup(id, type) {
     const msgBody = document.createElement('div');
     msgBody.id = 'mp-body';
     msgBody.style.cssText = 'font-size:14px;white-space:pre-wrap;line-height:1.9;color:var(--text);background:var(--gl);padding:12px;border-radius:8px';
-    msgBody.textContent = (curLang === 'vi' ? textVI : textEN) || '—';
+    // Chỉ bỏ dòng "Xác nhận Booking:"/"Booking Confirmation:" khi HIỂN THỊ trong popup này
+    // (popup đã có tiêu đề "✅ Tin xác nhận" riêng, lặp lại là thừa) — nút Copy vẫn copy
+    // nguyên văn đầy đủ (có dòng tiêu đề) vì đây là tin gửi cho khách, cần ngữ cảnh rõ ràng.
+    msgBody.textContent = stripConfirmHeader(curLang === 'vi' ? textVI : textEN) || '—';
     function switchMpLang(lang) {
       curLang = lang;
-      msgBody.textContent = (lang === 'vi' ? textVI : textEN) || '—';
+      msgBody.textContent = stripConfirmHeader(lang === 'vi' ? textVI : textEN) || '—';
       document.getElementById('mp-tab-vi').style.background = lang==='vi'?'var(--gd)':'white';
       document.getElementById('mp-tab-vi').style.color = lang==='vi'?'white':'var(--text2)';
       document.getElementById('mp-tab-en').style.background = lang==='en'?'var(--gd)':'white';
@@ -3315,7 +3323,7 @@ function stripPriceLine(text) {
 
 function stripConfirmHeader(text) {
   if (!text) return text;
-  return text.replace(/^Xác nhận Booking:\s*\n+/, '').trim();
+  return text.replace(/^(Xác nhận Booking:|Booking Confirmation:)\s*\n+/, '').trim();
 }
 
 function fmtDate(val, showTime) {

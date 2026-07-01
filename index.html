@@ -629,7 +629,7 @@
     <div class="menu-body">
       <button class="menu-item" id="menu-dieu-xe" onclick="navTo('dieu-xe')">
         <span class="menu-item-icon">📋</span>
-        <span><span class="menu-item-label">Điều xe</span><br><span class="menu-item-sub">Tạo & xử lý tin điều xe</span></span>
+        <span><span class="menu-item-label">Tạo booking</span><br><span class="menu-item-sub">Nhập tin nháp, AI xử lý thành booking</span></span>
       </button>
       <button class="menu-item" id="menu-thong-tin-xe" onclick="navTo('thong-tin-xe')">
         <span class="menu-item-icon">🚗</span>
@@ -653,7 +653,7 @@
   <div class="bottom-nav">
     <button class="nav-btn active" id="nav-dieu-xe" onclick="switchTab('dieu-xe')">
       <span class="nav-btn-icon">📋</span>
-      <span class="nav-btn-label">Điều xe</span>
+      <span class="nav-btn-label">Tạo booking</span>
     </button>
     <button class="nav-btn" id="nav-thong-tin-xe" onclick="switchTab('thong-tin-xe')">
       <span class="nav-btn-icon">🚗</span>
@@ -743,14 +743,6 @@
         <button class="btn-save" style="background:var(--text3)" onclick="cancelAddRoom()">Huỷ</button>
       </div>
     </div>
-      </div>
-    </div>
-
-    <div class="settings-group" id="settings-partners-group">
-      <button class="acc-head" onclick="toggleAcc('partners')"><span class="acc-icon">🤝</span><span class="acc-title">Quản lý Đối tác</span><span class="acc-arrow">▶</span></button>
-      <div class="acc-body" id="acc-partners">
-        <div class="settings-card" id="partner-list-settings"></div>
-        <button class="btn-save" style="background:var(--blue)" onclick="showAddPartnerSettings()">+ Thêm đối tác</button>
       </div>
     </div>
 
@@ -886,12 +878,12 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.6';
+const APP_VERSION = '16.7';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
-const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-telegram','settings-data','settings-partners'];
-const BOOKING_FEATURES = ['booking-edit-points','booking-points-status','booking-delete'];
+const SETTINGS_FEATURES = ['settings-rooms','settings-sync','settings-telegram','settings-data'];
+const BOOKING_FEATURES = ['booking-edit-points','booking-points-status','booking-delete','booking-edit-drive-status','booking-edit-pay-status','booking-edit-price','booking-edit-carinfo','booking-edit-extras','booking-edit-alert'];
 
 function getUsers() {
   return JSON.parse(localStorage.getItem('nbc_users') || '[]');
@@ -1006,8 +998,7 @@ function initApp() {
     'settings-rooms': 'settings-room-group',
     'settings-sync': 'settings-sync-group',
     'settings-telegram': 'settings-telegram-group',
-    'settings-data': 'settings-data-group',
-    'settings-partners': 'settings-partners-group'
+    'settings-data': 'settings-data-group'
   };
   SETTINGS_FEATURES.forEach(function(sf) {
     const groupEl = document.getElementById(settingsFeatureMap[sf]);
@@ -1063,7 +1054,7 @@ function renderUserSettings() {
     el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Chưa có người dùng nào</div>';
     return;
   }
-  const featureLabels = {'dieu-xe':'Điều xe','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-telegram':'Nhắc lịch Telegram','settings-data':'Dữ liệu / Xuất Excel','settings-partners':'Quản lý Đối tác','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking'};
+  const featureLabels = {'dieu-xe':'Tạo booking','thong-tin-xe':'Thông tin xe','booking':'Booking','khachhang':'Khách hàng','baocao':'Báo cáo','settings-rooms':'Quản lý Room','settings-sync':'Đồng bộ GG Sheets','settings-telegram':'Nhắc lịch Telegram','settings-data':'Dữ liệu / Xuất Excel','booking-edit-points':'Sửa điểm','booking-points-status':'Thu điểm','booking-delete':'Xoá booking','booking-edit-drive-status':'Đổi trạng thái điều xe','booking-edit-pay-status':'Đổi trạng thái thanh toán','booking-edit-price':'Sửa giá điều','booking-edit-carinfo':'Sửa thông tin xe','booking-edit-extras':'Thêm phí phát sinh/VAT','booking-edit-alert':'Sửa cảnh báo trước'};
   el.innerHTML = users.map(function(u,i){
     const fLabels = (u.features||[]).map(function(f){ return featureLabels[f]||f; }).join(', ') || 'Không có quyền';
     return '<div class="room-item">'+
@@ -1089,7 +1080,7 @@ function showEditUserForm(idx) {
 function showUserForm(idx) {
   const users = getUsers();
   const u = idx !== null ? users[idx] : null;
-  const featureLabels = {'dieu-xe':'📋 Điều xe','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-telegram':'🔔 Nhắc lịch Telegram','settings-data':'💾 Dữ liệu / Xuất Excel','settings-partners':'🤝 Quản lý Đối tác','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking'};
+  const featureLabels = {'dieu-xe':'📋 Tạo booking','thong-tin-xe':'🚗 Thông tin xe','booking':'📁 Booking','khachhang':'👥 Khách hàng','baocao':'📊 Báo cáo','settings-rooms':'🏆 Quản lý Room','settings-sync':'🔄 Đồng bộ GG Sheets','settings-telegram':'🔔 Nhắc lịch Telegram','settings-data':'💾 Dữ liệu / Xuất Excel','booking-edit-points':'✏️ Sửa điểm booking','booking-points-status':'🏆 Thu điểm booking','booking-delete':'🗑 Xoá booking','booking-edit-drive-status':'🚗 Đổi trạng thái điều xe','booking-edit-pay-status':'💰 Đổi trạng thái thanh toán','booking-edit-price':'💵 Sửa giá điều','booking-edit-carinfo':'🚙 Sửa thông tin xe','booking-edit-extras':'➕ Thêm phí phát sinh/VAT','booking-edit-alert':'⏰ Sửa cảnh báo trước'};
   const allFeaturesToShow = ALL_FEATURES.concat(SETTINGS_FEATURES).concat(BOOKING_FEATURES);
   const checkboxes = allFeaturesToShow.map(function(f){
     const checked = u && (u.features||[]).includes(f) ? 'checked' : '';
@@ -1543,6 +1534,7 @@ NHÓM LOẠI XE (vehicleGroup) — tự phân loại theo loại xe nhận diệ
 GIỜ: Tin điều xe: HH:MM (24h). Tin xác nhận VI: thêm buổi (sáng/trưa/chiều/tối). EN: AM/PM 12h.
 
 GIÁ: Tin điều xe: ngắn gọn (200k,5tr) + tiền tố "${giaPrefix}". VI: 300.000 VND. EN: 300,000 VND.
+QUY ĐỔI giá viết tắt kiểu Việt Nam: "k"=nghìn (200k=200.000), "tr"=triệu (5tr=5.000.000). Số sau "tr" là PHẦN TRĂM NGHÌN của triệu đó, KHÔNG phải số thập phân: "1tr2"=1.200.000 (KHÔNG PHẢI 1.200.000,2 hay 1,2tr=1.200), "2tr5"=2.500.000, "1tr50"=1.050.000 (2 chữ số sau "tr" là chục nghìn). Ví dụ đầy đủ: 1tr2 → 1.200.000 VND / 1,200,000 VND.
 Giá dịch vụ CHỈ hiển thị trong tin xác nhận khi HIỂN THỊ GIÁ VP=có, dùng GIÁ VP đã nhập.
 
 MŨI TÊN điều xe: ➜. KÝ HIỆU nội bộ: "thu hộ vp","TK","CK","Your amount" → KHÔNG đưa vào tin xác nhận.
@@ -2199,7 +2191,12 @@ function openDetail(id) {
   }
   html += '<div style="border-top:.5px solid var(--gb);margin-top:4px;padding-top:6px"></div>';
   if (b.priceVP) html += '<div style="font-size:13px;color:var(--text2)">💰 Giá VP: <b style="color:var(--gd)">'+formatMoney(b.priceVP)+'</b></div>';
-  if (b.priceDriver) html += '<div style="font-size:13px;color:var(--text2)">🚗 Giá điều: <b style="color:var(--red)">'+formatMoney(b.priceDriver)+'</b></div>';
+  // Giá điều để dạng NHẬP TAY được (không chỉ hiển thị) — vì nhiều khi tạo booking xong
+  // nhưng CHƯA điều được xe, chưa có giá điều ngay từ đầu, cần sửa/bổ sung sau.
+  html += '<div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px">';
+  html += '<span style="flex-shrink:0">🚗 Giá điều:</span>';
+  html += '<input type="text" placeholder="vd: 350k — chưa có thì để trống" value="'+(b.priceDriver||'')+'" style="flex:1;padding:4px 8px;font-size:13px;border-color:var(--red)" id="price-driver-'+id+'" onchange="updatePriceDriver(\''+id+'\')">';
+  html += '</div>';
   html += '<div style="font-size:13px;color:var(--text2)">'+(b.custType==='doitac' ? '🤝 Đối tác: <b>'+(b.partnerName||'—')+'</b>' : '👤 Khách lẻ')+'</div>';
   html += '<div style="font-size:13px;color:var(--text2)">🏆 Room: <b>'+(b.room||'—')+'</b> | Điểm: <b>'+(b.points||'—')+'</b> | Tiền: <b style="color:var(--gd)">'+pointsAmtFmt+'</b></div>';
   html += '<div style="border-top:.5px solid var(--gb);margin-top:4px;padding-top:6px;display:flex;align-items:center;gap:8px">';
@@ -2502,6 +2499,12 @@ function closeDetail() {
 }
 
 function toggleVAT(id) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-edit-extras')) {
+    showToast('⛔ Bạn không có quyền sửa VAT'); openDetail(id); return;
+  }
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b) return;
   b.hasVAT = document.getElementById('vat-cb-'+id).checked;
@@ -2513,6 +2516,12 @@ function toggleVAT(id) {
 // Luu so gio canh bao rieng cho booking nay (vd: xe san bay 1h, xe tinh 24h, xe to 168h).
 // De trong = dung mac dinh he thong (cau hinh chung trong Settings).
 function updateAlertHours(id) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-edit-alert')) {
+    showToast('⛔ Bạn không có quyền sửa cảnh báo trước'); openDetail(id); return;
+  }
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b) return;
   const raw = (document.getElementById('alert-hours-'+id)||{}).value;
@@ -2523,10 +2532,34 @@ function updateAlertHours(id) {
   showToast(b.alertHoursOverride !== null ? ('✓ Cảnh báo trước ' + b.alertHoursOverride + ' giờ') : '✓ Dùng cấu hình mặc định');
 }
 
+// Cho phép nhập/sửa tay Giá điều ngay tại màn hình chi tiết booking — vì nhiều lúc tạo booking
+// xong nhưng chưa điều được xe (chưa có giá điều ngay từ đầu), cần bổ sung/sửa lại sau đó.
+function updatePriceDriver(id) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-edit-price')) {
+    showToast('⛔ Bạn không có quyền sửa giá điều'); openDetail(id); return;
+  }
+  const b = bookings.find(function(x){ return x.id===id; });
+  if (!b) return;
+  const raw = (document.getElementById('price-driver-'+id)||{}).value || '';
+  b.priceDriver = raw.trim();
+  localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
+  scheduleAutoSync();
+  showToast(b.priceDriver ? ('✓ Đã lưu giá điều: ' + b.priceDriver) : '✓ Đã xoá giá điều');
+}
+
 // Luu thong tin xe (dan thu cong tu tab "Thong tin xe" doc lap) vao booking.
 // Luu nguyen van nhieu dong co nhan tren app; Apps Script se tu convert sang dang gop bang dau ";"
 // khi dong bo len Google Sheet.
 function saveCarInfo(id, value) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-edit-carinfo')) {
+    showToast('⛔ Bạn không có quyền sửa thông tin xe'); return;
+  }
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b) return;
   b.carInfo = (value || '').trim();
@@ -2536,6 +2569,12 @@ function saveCarInfo(id, value) {
 }
 
 function addExtra(id) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-edit-extras')) {
+    showToast('⛔ Bạn không có quyền thêm phí phát sinh/VAT'); return;
+  }
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b) return;
   const note = (document.getElementById('extra-note-'+id)||{}).value||'';
@@ -2550,6 +2589,12 @@ function addExtra(id) {
 }
 
 function removeExtra(id, idx) {
+  const cu = getCurrentUser();
+  const isAdmin = !cu || cu.role === 'admin';
+  const feats = (cu && cu.features) || [];
+  if (!isAdmin && !feats.includes('booking-edit-extras')) {
+    showToast('⛔ Bạn không có quyền sửa phí phát sinh/VAT'); return;
+  }
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b || !b.extras) return;
   b.extras.splice(idx, 1);
@@ -2562,7 +2607,13 @@ function updateStatus(id, field, value) {
   const cu = getCurrentUser();
   const isAdmin = !cu || cu.role === 'admin';
   const feats = (cu && cu.features) || [];
-  // Kiểm tra quyền thu điểm
+  // Kiểm tra quyền — tách riêng từng loại trạng thái theo yêu cầu, không gộp chung
+  if (field === 'statusDrive' && !isAdmin && !feats.includes('booking-edit-drive-status')) {
+    showToast('⛔ Bạn không có quyền đổi trạng thái điều xe'); return;
+  }
+  if (field === 'statusPay' && !isAdmin && !feats.includes('booking-edit-pay-status')) {
+    showToast('⛔ Bạn không có quyền đổi trạng thái thanh toán'); return;
+  }
   if (field === 'statusPoints' && !isAdmin && !feats.includes('booking-points-status')) {
     showToast('⛔ Bạn không có quyền thay đổi tình trạng thu điểm'); return;
   }
@@ -3376,6 +3427,16 @@ function parseMoneyNum(val) {
   // Bỏ dấu chấm nếu không phải thập phân (vd: 1.000.000 → 1000000)
   if ((s.match(/\./g)||[]).length > 1) s = s.replace(/\./g, '');
   else if (s.includes('.') && s.split('.')[1].length === 3) s = s.replace('.', '');
+  // Dạng viết tắt "XtrY" kiểu Việt Nam (vd: 1tr2 = 1.200.000, 2tr5 = 2.500.000) — TRƯỚC ĐÂY
+  // chỉ nhận dạng khi chuỗi KẾT THÚC đúng bằng "tr" (vd "5tr"), nên "1tr2" bị parseFloat cắt
+  // ngay tại chữ "tr" và chỉ đọc ra đúng số 1 — sai hoàn toàn, hiểu nhầm 1.200.000 thành 1 VND.
+  var trMatch = s.match(/^(\d+(?:\.\d+)?)tr(\d{1,2})$/);
+  if (trMatch) {
+    var trieu = parseFloat(trMatch[1]);
+    var phanSau = trMatch[2];
+    var phanThem = phanSau.length === 1 ? parseInt(phanSau, 10) * 100000 : parseInt(phanSau, 10) * 10000;
+    return trieu * 1000000 + phanThem;
+  }
   if (s.endsWith('tr')) return parseFloat(s) * 1000000;
   if (s.endsWith('k')) return parseFloat(s) * 1000;
   return parseFloat(s) || 0;
@@ -3606,7 +3667,14 @@ function parseMoneyToNum(val) {
   if (!val) return '';
   const s = val.toString().trim().toLowerCase();
   let num = 0;
-  if (s.endsWith('tr')) num = parseFloat(s) * 1000000;
+  const trMatch = s.match(/^(\d+(?:\.\d+)?)tr(\d{1,2})$/);
+  if (trMatch) {
+    const trieu = parseFloat(trMatch[1]);
+    const phanSau = trMatch[2];
+    const phanThem = phanSau.length === 1 ? parseInt(phanSau, 10) * 100000 : parseInt(phanSau, 10) * 10000;
+    num = trieu * 1000000 + phanThem;
+  }
+  else if (s.endsWith('tr')) num = parseFloat(s) * 1000000;
   else if (s.endsWith('k')) num = parseFloat(s) * 1000;
   else num = parseFloat(s);
   return isNaN(num) ? '' : num;

@@ -162,6 +162,11 @@
   .filter-bar .filter-chip{scroll-snap-align:start}
   .filter-chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--gb);background:white;color:var(--text2);white-space:nowrap;transition:all .15s;flex-shrink:0}
   .filter-chip.active{background:var(--gd);color:white;border-color:var(--gd)}
+  .filter-bar.sub-bar{padding-top:0;padding-bottom:8px}
+  .filter-chip.sub{padding:5px 10px;font-size:11.5px;background:var(--gl);border-color:var(--gl);color:var(--gt)}
+  .filter-chip.sub.active{background:var(--gm);color:white;border-color:var(--gm)}
+  .sub-date-wrap{padding:0 14px 10px;flex-shrink:0}
+  .sub-date-wrap input[type=date]{width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none}
 
   .search-bar{padding:10px 14px 0;flex-shrink:0}
   .search-input{position:relative}
@@ -378,12 +383,35 @@
         <input type="text" id="search-phone" placeholder="Tìm theo số điện thoại..." oninput="renderBookings()">
       </div>
     </div>
-    <div class="filter-bar" style="padding-top:10px">
-      <button class="filter-chip active" id="filter-all" onclick="setFilter('all')">Tất cả</button>
-      <button class="filter-chip" id="filter-chuadieu" onclick="setFilter('chuadieu')">🚗 Chưa điều</button>
-      <button class="filter-chip" id="filter-incomplete" onclick="setFilter('incomplete')">Chưa hoàn thành</button>
-      <button class="filter-chip" id="filter-today" onclick="setFilter('today')">Hôm nay</button>
-      <button class="filter-chip" id="filter-month" onclick="setFilter('month')">Tháng này</button>
+    <div class="filter-bar" style="padding-top:10px" id="booking-main-tabs">
+      <button class="filter-chip active" id="mtab-newest" onclick="setMainTab('newest')">🕐 Mới nhất</button>
+      <button class="filter-chip" id="mtab-chuadieu" onclick="setMainTab('chuadieu')">🚗 Chưa điều</button>
+      <button class="filter-chip" id="mtab-time" onclick="setMainTab('time')">📅 Thời gian</button>
+      <button class="filter-chip" id="mtab-vehicle" onclick="setMainTab('vehicle')">🚙 Loại xe</button>
+      <button class="filter-chip" id="mtab-triploai" onclick="setMainTab('triploai')">🗂️ Loại hình</button>
+    </div>
+    <div class="filter-bar sub-bar" id="sub-time-row" style="display:none">
+      <button class="filter-chip sub active" id="sub-time-today" onclick="setTimeSub('today')">Hôm nay</button>
+      <button class="filter-chip sub" id="sub-time-month" onclick="setTimeSub('month')">Tháng này</button>
+      <button class="filter-chip sub" id="sub-time-custom" onclick="setTimeSub('custom')">📆 Lọc lịch</button>
+    </div>
+    <div class="sub-date-wrap" id="sub-time-datewrap" style="display:none">
+      <input type="date" id="sub-time-date-input" onchange="onCustomDatePicked()">
+    </div>
+    <div class="filter-bar sub-bar" id="sub-vehicle-row" style="display:none">
+      <button class="filter-chip sub active" id="sub-veh-XeThuong" onclick="setVehicleSub('Xe thuong')">Xe thường</button>
+      <button class="filter-chip sub" id="sub-veh-VF9" onclick="setVehicleSub('VF9')">VF9</button>
+      <button class="filter-chip sub" id="sub-veh-Carnival" onclick="setVehicleSub('Carnival')">Carnival</button>
+      <button class="filter-chip sub" id="sub-veh-Limousine" onclick="setVehicleSub('Limousine')">Limousine</button>
+      <button class="filter-chip sub" id="sub-veh-XeSang" onclick="setVehicleSub('Xe Sang')">Xe Sang</button>
+      <button class="filter-chip sub" id="sub-veh-XeTo" onclick="setVehicleSub('Xe to')">Xe to</button>
+      <button class="filter-chip sub" id="sub-veh-XeKhac" onclick="setVehicleSub('Xe khac')">Xe khác</button>
+    </div>
+    <div class="filter-bar sub-bar" id="sub-triploai-row" style="display:none">
+      <button class="filter-chip sub active" id="sub-tl-SanBay" onclick="setTripSub('San bay')">✈️ Sân bay</button>
+      <button class="filter-chip sub" id="sub-tl-DiTinh" onclick="setTripSub('Di tinh')">🛣️ Đi tỉnh</button>
+      <button class="filter-chip sub" id="sub-tl-CityTour" onclick="setTripSub('City tour')">🏙️ City tour</button>
+      <button class="filter-chip sub" id="sub-tl-DiTour" onclick="setTripSub('Di Tour')">🗺️ Đi Tour</button>
     </div>
     <div class="results-zone" id="booking-list">
       <div class="empty-state">
@@ -698,7 +726,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.3';
+const APP_VERSION = '15.4';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -977,7 +1005,11 @@ function doChangePassword() {
 let apiKey = localStorage.getItem('nbc_apikey') || '';
 let bookings = JSON.parse(localStorage.getItem('nbc_bookings') || '[]');
 let rooms = JSON.parse(localStorage.getItem('nbc_rooms') || '[]');
-let currentFilter = 'all';
+let currentMainTab = 'newest';
+let currentTimeSub = 'today';
+let currentTimeCustomDate = '';
+let currentVehicleSub = 'Xe thuong';
+let currentTripSub = 'San bay';
 let currentDetailId = null;
 let lastProcessed = null;
 let editingRoomIdx = null;
@@ -2291,10 +2323,56 @@ function saveToBooking() {
 }
 
 // ===== BOOKING LIST =====
-function setFilter(f) {
-  currentFilter = f;
-  ['all','chuadieu','incomplete','today','month'].forEach(x => {
-    document.getElementById('filter-'+x).classList.toggle('active', x===f);
+function setMainTab(t) {
+  currentMainTab = t;
+  ['newest','chuadieu','time','vehicle','triploai'].forEach(x => {
+    document.getElementById('mtab-'+x).classList.toggle('active', x===t);
+  });
+  document.getElementById('sub-time-row').style.display = (t==='time') ? 'flex' : 'none';
+  document.getElementById('sub-time-datewrap').style.display = (t==='time' && currentTimeSub==='custom') ? 'block' : 'none';
+  document.getElementById('sub-vehicle-row').style.display = (t==='vehicle') ? 'flex' : 'none';
+  document.getElementById('sub-triploai-row').style.display = (t==='triploai') ? 'flex' : 'none';
+  renderBookings();
+}
+
+function setTimeSub(t) {
+  currentTimeSub = t;
+  ['today','month','custom'].forEach(x => {
+    document.getElementById('sub-time-'+x).classList.toggle('active', x===t);
+  });
+  document.getElementById('sub-time-datewrap').style.display = (t==='custom') ? 'block' : 'none';
+  if (t === 'custom') {
+    const inp = document.getElementById('sub-time-date-input');
+    const now = new Date();
+    const maxD = now.toISOString().slice(0,10);
+    const minDate = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
+    inp.max = maxD;
+    inp.min = minDate.toISOString().slice(0,10);
+    if (!inp.value) { inp.value = maxD; currentTimeCustomDate = maxD; }
+  }
+  renderBookings();
+}
+
+function onCustomDatePicked() {
+  currentTimeCustomDate = document.getElementById('sub-time-date-input').value;
+  renderBookings();
+}
+
+const VEHICLE_GROUP_IDS = {'Xe thuong':'XeThuong','VF9':'VF9','Carnival':'Carnival','Limousine':'Limousine','Xe Sang':'XeSang','Xe to':'XeTo','Xe khac':'XeKhac'};
+const TRIP_TYPE_IDS = {'San bay':'SanBay','Di tinh':'DiTinh','City tour':'CityTour','Di Tour':'DiTour'};
+
+function setVehicleSub(v) {
+  currentVehicleSub = v;
+  Object.keys(VEHICLE_GROUP_IDS).forEach(function(x) {
+    document.getElementById('sub-veh-'+VEHICLE_GROUP_IDS[x]).classList.toggle('active', x===v);
+  });
+  renderBookings();
+}
+
+function setTripSub(v) {
+  currentTripSub = v;
+  Object.keys(TRIP_TYPE_IDS).forEach(function(x) {
+    document.getElementById('sub-tl-'+TRIP_TYPE_IDS[x]).classList.toggle('active', x===v);
   });
   renderBookings();
 }
@@ -2304,14 +2382,29 @@ function renderBookings() {
   const now = new Date();
   const todayStr = String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+  let customDateStr = '';
+  if (currentTimeCustomDate) {
+    const parts = currentTimeCustomDate.split('-'); // YYYY-MM-DD
+    if (parts.length === 3) customDateStr = parts[2]+'/'+parts[1]+'/'+parts[0];
+  }
   let filtered = bookings.filter(b => {
     if (search && !b.phone.includes(search)) return false;
-    if (currentFilter === 'chuadieu') return b.statusDrive !== 'done';
-    if (currentFilter === 'incomplete') return b.statusDrive !== 'done' || b.statusPay !== 'paid';
-    if (currentFilter === 'today') return fmtDate(b.date) === todayStr;
-    if (currentFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
-    return true;
+    if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
+    if (currentMainTab === 'time') {
+      if (currentTimeSub === 'today') return fmtDate(b.date) === todayStr;
+      if (currentTimeSub === 'month') return fmtDate(b.date).endsWith(monthStr);
+      if (currentTimeSub === 'custom') return customDateStr && fmtDate(b.date) === customDateStr;
+      return true;
+    }
+    if (currentMainTab === 'vehicle') return (b.vehicleGroup||'Xe khac') === currentVehicleSub;
+    if (currentMainTab === 'triploai') return b.tripType === currentTripSub;
+    return true; // 'newest' — all bookings, newest first (default order)
   });
+  if (currentMainTab === 'newest') {
+    filtered = filtered.slice().sort(function(a, b2) {
+      return parseCreatedAt(b2.createdAt) - parseCreatedAt(a.createdAt);
+    });
+  }
   const el = document.getElementById('booking-list');
   if (!filtered.length) {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">📁</div><div>Không có booking nào</div></div>';
@@ -3471,6 +3564,15 @@ function createdAtNow() {
   const timePart = String(vn.getHours()).padStart(2,'0') + ':' +
                     String(vn.getMinutes()).padStart(2,'0');
   return datePart + ' ' + timePart;
+}
+
+// Chuyen chuoi createdAt "DD/MM/YYYY HH:mm" thanh timestamp de sap xep;
+// tra ve 0 neu khong parse duoc (booking cu khong co createdAt).
+function parseCreatedAt(val) {
+  if (!val || typeof val !== 'string') return 0;
+  const m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})/);
+  if (!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime();
 }
 
 // Bo dong tieu de "Xac nhan Booking:" khoi confirmVI khi hien thi trong card

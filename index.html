@@ -429,7 +429,7 @@
   <div class="screen" id="tab-baocao">
     <div style="padding:10px 14px 0;flex-shrink:0;display:flex;flex-direction:column;gap:8px">
       <div class="filter-bar" id="bc-main-tabs" style="padding:0">
-        <button class="filter-chip active" id="bcmtab-time" onclick="setBCMainTab('time')">📅 Thời gian</button>
+        <button class="filter-chip active" id="bcmtab-time" onclick="setBCMainTab('time')">📊 Tổng quan</button>
         <button class="filter-chip" id="bcmtab-room" onclick="setBCMainTab('room')">🏆 Room</button>
         <button class="filter-chip" id="bcmtab-vehicle" onclick="setBCMainTab('vehicle')">🚙 Loại xe</button>
         <button class="filter-chip" id="bcmtab-partner" onclick="setBCMainTab('partner')">🤝 Đối tác</button>
@@ -437,26 +437,50 @@
 
       <div id="bc-body-time">
         <div class="filter-bar sub-bar" style="padding:0 0 8px">
-          <button class="filter-chip sub" id="bc-day" onclick="setBCFilter('day')">Ngày</button>
-          <button class="filter-chip sub active" id="bc-month" onclick="setBCFilter('month')">Tháng này</button>
-          <button class="filter-chip sub" id="bc-custom" onclick="setBCFilter('custom')">📆 Lọc</button>
+          <button class="filter-chip sub" id="bc-day-time" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip sub active" id="bc-month-time" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip sub" id="bc-custom-time" onclick="setBCFilter('custom')">📆 Lọc</button>
         </div>
-        <div class="sub-date-wrap" id="bc-datewrap" style="display:none;padding:0">
+        <div class="sub-date-wrap" id="bc-datewrap-time" style="display:none;padding:0">
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="date" id="bc-date-from" onchange="onBCDateRangePicked()" style="flex:1">
+            <input type="date" id="bc-date-from-time" onchange="onBCDateRangePicked('time')" style="flex:1">
             <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
-            <input type="date" id="bc-date-to" onchange="onBCDateRangePicked()" style="flex:1">
+            <input type="date" id="bc-date-to-time" onchange="onBCDateRangePicked('time')" style="flex:1">
           </div>
         </div>
       </div>
 
       <div id="bc-body-room" style="display:none">
+        <div class="filter-bar sub-bar" style="padding:0 0 8px">
+          <button class="filter-chip sub" id="bc-day-room" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip sub active" id="bc-month-room" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip sub" id="bc-custom-room" onclick="setBCFilter('custom')">📆 Lọc</button>
+        </div>
+        <div class="sub-date-wrap" id="bc-datewrap-room" style="display:none;padding:0">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="bc-date-from-room" onchange="onBCDateRangePicked('room')" style="flex:1">
+            <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+            <input type="date" id="bc-date-to-room" onchange="onBCDateRangePicked('room')" style="flex:1">
+          </div>
+        </div>
         <select id="bc-room-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🏆 Tất cả Room</option>
         </select>
       </div>
 
       <div id="bc-body-vehicle" style="display:none">
+        <div class="filter-bar sub-bar" style="padding:0 0 8px">
+          <button class="filter-chip sub" id="bc-day-vehicle" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip sub active" id="bc-month-vehicle" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip sub" id="bc-custom-vehicle" onclick="setBCFilter('custom')">📆 Lọc</button>
+        </div>
+        <div class="sub-date-wrap" id="bc-datewrap-vehicle" style="display:none;padding:0">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="bc-date-from-vehicle" onchange="onBCDateRangePicked('vehicle')" style="flex:1">
+            <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+            <input type="date" id="bc-date-to-vehicle" onchange="onBCDateRangePicked('vehicle')" style="flex:1">
+          </div>
+        </div>
         <select id="bc-vehicle-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🚙 Tất cả loại xe</option>
           <option value="Xe thuong">Xe thường</option>
@@ -470,6 +494,18 @@
       </div>
 
       <div id="bc-body-partner" style="display:none">
+        <div class="filter-bar sub-bar" style="padding:0 0 8px">
+          <button class="filter-chip sub" id="bc-day-partner" onclick="setBCFilter('day')">Ngày</button>
+          <button class="filter-chip sub active" id="bc-month-partner" onclick="setBCFilter('month')">Tháng này</button>
+          <button class="filter-chip sub" id="bc-custom-partner" onclick="setBCFilter('custom')">📆 Lọc</button>
+        </div>
+        <div class="sub-date-wrap" id="bc-datewrap-partner" style="display:none;padding:0">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="bc-date-from-partner" onchange="onBCDateRangePicked('partner')" style="flex:1">
+            <span style="color:var(--text3);font-size:12px;flex-shrink:0">đến</span>
+            <input type="date" id="bc-date-to-partner" onchange="onBCDateRangePicked('partner')" style="flex:1">
+          </div>
+        </div>
         <select id="bc-partner-filter" onchange="renderBaoCao()" style="width:100%;border:1px solid var(--gb);border-radius:var(--radius-sm);padding:8px 11px;font-size:13px;font-family:inherit;color:var(--text);background:white;outline:none">
           <option value="">🤝 Tất cả đối tác</option>
         </select>
@@ -762,7 +798,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '15.7';
+const APP_VERSION = '15.8';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -3540,6 +3576,7 @@ function deletePartnerSettings(id) {
 }
 
 // ===== BÁO CÁO =====
+const BC_TAB_SUFFIXES = ['time','room','vehicle','partner'];
 let bcMainTab = 'time';
 let bcFilter = 'month'; // Ưu tiên hiển thị theo tháng khi vào trang Báo cáo
 let bcRangeFrom = '';
@@ -3547,38 +3584,48 @@ let bcRangeTo = '';
 
 function setBCMainTab(t) {
   bcMainTab = t;
-  ['time','room','vehicle','partner'].forEach(function(x) {
+  BC_TAB_SUFFIXES.forEach(function(x) {
     document.getElementById('bcmtab-'+x).classList.toggle('active', x===t);
     document.getElementById('bc-body-'+x).style.display = (x===t) ? 'block' : 'none';
   });
   renderBaoCao();
 }
 
+// Thời gian là 1 bộ lọc dùng chung, nhưng hiển thị lặp lại ở mỗi tab cha (Thời gian/Room/Loại xe/Đối tác)
+// để người dùng đổi kỳ báo cáo ngay trong tab đang xem, không cần quay lại tab Thời gian.
 function setBCFilter(f) {
   bcFilter = f;
-  ['day','month','custom'].forEach(function(x) {
-    document.getElementById('bc-'+x).classList.toggle('active', x===f);
+  BC_TAB_SUFFIXES.forEach(function(suf) {
+    ['day','month','custom'].forEach(function(x) {
+      const el = document.getElementById('bc-'+x+'-'+suf);
+      if (el) el.classList.toggle('active', x===f);
+    });
+    const wrap = document.getElementById('bc-datewrap-'+suf);
+    if (wrap) wrap.style.display = (f==='custom') ? 'block' : 'none';
   });
-  const wrap = document.getElementById('bc-datewrap');
-  wrap.style.display = (f==='custom') ? 'block' : 'none';
   if (f === 'custom') {
-    const fromInp = document.getElementById('bc-date-from');
-    const toInp = document.getElementById('bc-date-to');
     const now = new Date();
     const maxD = now.toISOString().slice(0,10);
     const minDate = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
     const minD = minDate.toISOString().slice(0,10);
-    fromInp.max = maxD; fromInp.min = minD;
-    toInp.max = maxD; toInp.min = minD;
-    if (!fromInp.value) { fromInp.value = minD; bcRangeFrom = minD; }
-    if (!toInp.value) { toInp.value = maxD; bcRangeTo = maxD; }
+    BC_TAB_SUFFIXES.forEach(function(suf) {
+      const fromInp = document.getElementById('bc-date-from-'+suf);
+      const toInp = document.getElementById('bc-date-to-'+suf);
+      if (!fromInp || !toInp) return;
+      fromInp.max = maxD; fromInp.min = minD;
+      toInp.max = maxD; toInp.min = minD;
+      if (!fromInp.value) fromInp.value = bcRangeFrom || minD;
+      if (!toInp.value) toInp.value = bcRangeTo || maxD;
+    });
+    if (!bcRangeFrom) bcRangeFrom = minD;
+    if (!bcRangeTo) bcRangeTo = maxD;
   }
   renderBaoCao();
 }
 
-function onBCDateRangePicked() {
-  const fromInp = document.getElementById('bc-date-from');
-  const toInp = document.getElementById('bc-date-to');
+function onBCDateRangePicked(suffix) {
+  const fromInp = document.getElementById('bc-date-from-'+suffix);
+  const toInp = document.getElementById('bc-date-to-'+suffix);
   bcRangeFrom = fromInp.value;
   bcRangeTo = toInp.value;
   // Đảm bảo "đến" không nhỏ hơn "từ" — nếu ngược thì hoán đổi cho người dùng
@@ -3586,6 +3633,14 @@ function onBCDateRangePicked() {
     const tmp = fromInp.value; fromInp.value = toInp.value; toInp.value = tmp;
     bcRangeFrom = fromInp.value; bcRangeTo = toInp.value;
   }
+  // Đồng bộ giá trị sang các bản sao ở tab khác
+  BC_TAB_SUFFIXES.forEach(function(suf) {
+    if (suf === suffix) return;
+    const fi = document.getElementById('bc-date-from-'+suf);
+    const ti = document.getElementById('bc-date-to-'+suf);
+    if (fi) fi.value = bcRangeFrom;
+    if (ti) ti.value = bcRangeTo;
+  });
   renderBaoCao();
 }
 
@@ -3745,6 +3800,49 @@ function calcPointsMoney(b) {
   return (r && b.points) ? parseFloat(b.points) * r.rate : 0;
 }
 
+// Dựng khối thẻ "Tổng quan" (Tổng chuyến, Doanh thu VP, Chi phí điều xe, Tiền điểm, Doanh số thực thu)
+// cho MỘT danh sách booking bất kỳ — dùng chung cho báo cáo tổng (tab Thời gian) và báo cáo
+// đã lọc theo Room/Loại xe/Đối tác (subList chỉ chứa booking thuộc mục đang chọn).
+function buildOverviewCardsHtml(subList) {
+  if (!subList.length) return '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu trong kỳ.</div></div>';
+
+  const totalChuyens = subList.length;
+  const doanhThuVP = subList.reduce(function(s,b){ return s + parseMoneyNum(b.priceVP); }, 0);
+  const chiPhiDieuXe = subList.reduce(function(s,b){ return s + parseMoneyNum(b.priceDriver); }, 0);
+
+  const diemDaThu = subList.filter(function(b){ return b.statusPoints==='collected'; })
+    .reduce(function(s,b){ return s + calcPointsMoney(b); }, 0);
+  const diemChuaThu = subList.filter(function(b){ return b.statusPoints!=='collected' && b.room && b.points; })
+    .reduce(function(s,b){ return s + calcPointsMoney(b); }, 0);
+  const tongTienDiem = diemDaThu + diemChuaThu;
+
+  const tongKhauTru = subList.reduce(function(s,b){ return s + calcDeductions(b); }, 0);
+  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem - tongKhauTru;
+
+  const dangXuLy = subList.filter(function(b){ return b.statusDrive==='processing'; }).length;
+  const daDieu = subList.filter(function(b){ return b.statusDrive==='done'; }).length;
+  const chuaTT = subList.filter(function(b){ return b.statusPay==='unpaid'; }).length;
+  const daCoc = subList.filter(function(b){ return b.statusPay==='deposited'; }).length;
+  const daTT = subList.filter(function(b){ return b.statusPay==='paid'; }).length;
+
+  let html = '<div class="bc-grid">';
+  html += '<div class="bc-card green full"><div class="bc-label">Tổng chuyến</div><div class="bc-value">'+totalChuyens+'</div>'
+    + '<div class="bc-sub">'+dangXuLy+' đang xử lý &nbsp;•&nbsp; '+daDieu+' đã điều</div>'
+    + '<div class="bc-sub" style="margin-top:2px">'+chuaTT+' chưa TT &nbsp;•&nbsp; '+daCoc+' đã cọc &nbsp;•&nbsp; '+daTT+' đã TT</div></div>';
+  html += '<div class="bc-card blue"><div class="bc-label">Doanh thu VP</div><div class="bc-value" style="font-size:15px">'+fmtVND(doanhThuVP)+'</div></div>';
+  html += '<div class="bc-card red"><div class="bc-label">Chi phí điều xe</div><div class="bc-value" style="font-size:15px">'+fmtVND(chiPhiDieuXe)+'</div></div>';
+  html += '<div class="bc-card green"><div class="bc-label">Tiền điểm đã thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemDaThu)+'</div></div>';
+  html += '<div class="bc-card orange"><div class="bc-label">Tiền điểm chưa thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemChuaThu)+'</div></div>';
+  if (tongKhauTru > 0) html += '<div class="bc-card orange"><div class="bc-label">Tổng khấu trừ (phí+VAT)</div><div class="bc-value" style="font-size:15px;color:var(--red)">−'+fmtVND(tongKhauTru)+'</div></div>';
+  html += '<div class="bc-card full" style="border:1.5px solid var(--gm);background:var(--gl)">'
+    + '<div class="bc-label">Doanh số thực thu</div>'
+    + '<div class="bc-value" style="font-size:18px;color:var(--gd)">'+fmtVND(doanhSoThucThu)+'</div>'
+    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm'+(tongKhauTru?' − '+fmtVND(tongKhauTru)+' khấu trừ':'')+'</div>'
+    + '</div>';
+  html += '</div>';
+  return html;
+}
+
 function renderBaoCao() {
   updateRoomDropdown();
   updatePartnerDropdown();
@@ -3758,27 +3856,6 @@ function renderBaoCao() {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div>Không có dữ liệu</div></div>';
     return;
   }
-
-  // Tổng quan
-  const totalChuyens = list.length;
-  const doanhThuVP = list.reduce(function(s,b){ return s + parseMoneyNum(b.priceVP); }, 0);
-  const chiPhiDieuXe = list.reduce(function(s,b){ return s + parseMoneyNum(b.priceDriver); }, 0);
-
-  const diemDaThu = list.filter(function(b){ return b.statusPoints==='collected'; })
-    .reduce(function(s,b){ return s + calcPointsMoney(b); }, 0);
-  const diemChuaThu = list.filter(function(b){ return b.statusPoints!=='collected' && b.room && b.points; })
-    .reduce(function(s,b){ return s + calcPointsMoney(b); }, 0);
-  const tongTienDiem = diemDaThu + diemChuaThu;
-
-  // Doanh số thực thu = Doanh thu VP - Chi phí điều xe + Tiền điểm
-  const tongKhauTru = list.reduce(function(s,b){ return s + calcDeductions(b); }, 0);
-  const doanhSoThucThu = doanhThuVP - chiPhiDieuXe + tongTienDiem - tongKhauTru;
-
-  const dangXuLy = list.filter(function(b){ return b.statusDrive==='processing'; }).length;
-  const daDieu = list.filter(function(b){ return b.statusDrive==='done'; }).length;
-  const chuaTT = list.filter(function(b){ return b.statusPay==='unpaid'; }).length;
-  const daCoc = list.filter(function(b){ return b.statusPay==='deposited'; }).length;
-  const daTT = list.filter(function(b){ return b.statusPay==='paid'; }).length;
 
   // Theo Room
   const roomStats = {};
@@ -3812,7 +3889,6 @@ function renderBaoCao() {
   const partnerStats = {};
   list.forEach(function(b) {
     if (b.custType !== 'doitac') return;
-    // Dùng partnerId nếu có, fallback về partnerName
     const key = b.partnerId || b.partnerName || 'unknown';
     if (!key || key === 'unknown') return;
     if (!partnerStats[key]) {
@@ -3830,100 +3906,101 @@ function renderBaoCao() {
     return k === partnerSel || partnerStats[k].name === partners.find(function(p){ return p.id===partnerSel; })?.name;
   }) || partnerSel) : '';
 
-  // Chỉ hiển thị "báo cáo tổng" khi tab đang xem có dữ liệu — tránh gây hiểu nhầm
-  // nếu Room/Loại xe/Đối tác đang chọn không có chuyến nào trong kỳ.
-  let activeHasData = true;
-  if (bcMainTab === 'room' && roomSel) activeHasData = !!roomStats[roomSel];
-  else if (bcMainTab === 'vehicle' && vehicleSel) activeHasData = !!vehicleStats[vehicleSel];
-  else if (bcMainTab === 'partner' && partnerSel) activeHasData = !!partnerStats[partnerSelKey];
+  let html = '';
 
-  if (!activeHasData) {
-    let noDataMsg = 'Không có dữ liệu trong kỳ.';
-    if (bcMainTab === 'room') noDataMsg = 'Không có dữ liệu cho Room "'+roomSel+'" trong kỳ.';
-    if (bcMainTab === 'vehicle') noDataMsg = 'Không có dữ liệu cho Loại xe "'+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'" trong kỳ.';
-    if (bcMainTab === 'partner') {
-      const p = partners.find(function(x){ return x.id === partnerSel; });
-      noDataMsg = 'Không có dữ liệu cho đối tác'+(p?' "'+p.name+'"':'')+' trong kỳ.';
-    }
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div>'+noDataMsg+'</div></div>';
-    return;
-  }
-
-  let html = '<div class="bc-grid">';
-
-  // Tổng chuyến
-  html += '<div class="bc-card green full"><div class="bc-label">Tổng chuyến</div><div class="bc-value">'+totalChuyens+'</div>'
-    + '<div class="bc-sub">'+dangXuLy+' đang xử lý &nbsp;•&nbsp; '+daDieu+' đã điều</div>'
-    + '<div class="bc-sub" style="margin-top:2px">'+chuaTT+' chưa TT &nbsp;•&nbsp; '+daCoc+' đã cọc &nbsp;•&nbsp; '+daTT+' đã TT</div></div>';
-
-  // Doanh thu VP
-  html += '<div class="bc-card blue"><div class="bc-label">Doanh thu VP</div><div class="bc-value" style="font-size:15px">'+fmtVND(doanhThuVP)+'</div></div>';
-
-  // Chi phí điều xe
-  html += '<div class="bc-card red"><div class="bc-label">Chi phí điều xe</div><div class="bc-value" style="font-size:15px">'+fmtVND(chiPhiDieuXe)+'</div></div>';
-
-  // Tiền điểm đã thu / chưa thu
-  html += '<div class="bc-card green"><div class="bc-label">Tiền điểm đã thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemDaThu)+'</div></div>';
-  html += '<div class="bc-card orange"><div class="bc-label">Tiền điểm chưa thu</div><div class="bc-value" style="font-size:15px">'+fmtVND(diemChuaThu)+'</div></div>';
-
-  // Doanh số thực thu
-  if (tongKhauTru > 0) html += '<div class="bc-card orange"><div class="bc-label">Tổng khấu trừ (phí+VAT)</div><div class="bc-value" style="font-size:15px;color:var(--red)">−'+fmtVND(tongKhauTru)+'</div></div>';
-  html += '<div class="bc-card full" style="border:1.5px solid var(--gm);background:var(--gl)">'
-    + '<div class="bc-label">Doanh số thực thu</div>'
-    + '<div class="bc-value" style="font-size:18px;color:var(--gd)">'+fmtVND(doanhSoThucThu)+'</div>'
-    + '<div class="bc-sub" style="margin-top:4px">'+fmtVND(doanhThuVP)+' VP  −  '+fmtVND(chiPhiDieuXe)+' điều xe  +  '+fmtVND(tongTienDiem)+' điểm'+(tongKhauTru?' − '+fmtVND(tongKhauTru)+' khấu trừ':'')+'</div>'
-    + '</div>';
-
-  html += '</div>';
-
-  // Theo Room — chỉ hiển thị Room được chọn
-  if (roomSel) {
-    html += '<div class="bc-section">Theo Room</div>';
-    const s = roomStats[roomSel];
-    if (s) {
-      html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🏆 '+roomSel+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; '+s.totalPts+' điểm &nbsp;•&nbsp; '+Number(s.rate).toLocaleString('vi-VN')+' VND/điểm</div></div>';
-      html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.totalMoney)+'</div>';
-      html += '<div class="bc-room-detail" style="color:var(--gm)">✅ '+fmtVND(s.collected)+' đã thu</div>';
-      if (s.uncollected) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.uncollected)+' chưa thu</div>';
-      html += '</div></div>';
+  if (bcMainTab === 'room') {
+    if (roomSel) {
+      const subList = list.filter(function(b){ return b.room === roomSel; });
+      html += '<div class="bc-section">🏆 '+roomSel+'</div>';
+      html += buildOverviewCardsHtml(subList);
+      if (subList.length) {
+        const s = roomStats[roomSel];
+        html += '<div class="bc-room-row">';
+        html += '<div><div class="bc-room-name">Điểm Room</div><div class="bc-sub">'+s.totalPts+' điểm &nbsp;•&nbsp; '+Number(s.rate).toLocaleString('vi-VN')+' VND/điểm</div></div>';
+        html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.totalMoney)+'</div>';
+        html += '<div class="bc-room-detail" style="color:var(--gm)">✅ '+fmtVND(s.collected)+' đã thu</div>';
+        if (s.uncollected) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.uncollected)+' chưa thu</div>';
+        html += '</div></div>';
+      }
     } else {
-      html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu cho Room này trong kỳ.</div></div>';
+      const keys = Object.keys(roomStats).sort(function(a,b2){ return roomStats[b2].count - roomStats[a].count; });
+      html += '<div class="bc-section">Theo Room</div>';
+      if (!keys.length) {
+        html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu Room trong kỳ.</div></div>';
+      } else {
+        keys.forEach(function(k) {
+          const s = roomStats[k];
+          html += '<div class="bc-room-row">';
+          html += '<div><div class="bc-room-name">🏆 '+k+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; '+s.totalPts+' điểm &nbsp;•&nbsp; '+Number(s.rate).toLocaleString('vi-VN')+' VND/điểm</div></div>';
+          html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.totalMoney)+'</div>';
+          html += '<div class="bc-room-detail" style="color:var(--gm)">✅ '+fmtVND(s.collected)+' đã thu</div>';
+          if (s.uncollected) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.uncollected)+' chưa thu</div>';
+          html += '</div></div>';
+        });
+      }
     }
-  }
-
-  // Theo Loại xe — chỉ hiển thị nhóm xe được chọn
-  if (vehicleSel) {
-    html += '<div class="bc-section">Theo Loại xe</div>';
-    const s = vehicleStats[vehicleSel];
-    if (s) {
-      html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🚙 '+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'</div><div class="bc-sub">'+s.count+' chuyến</div></div>';
-      html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
-      html += '<div class="bc-room-detail" style="color:var(--blue)">💰 '+fmtVND(s.vp)+' doanh thu VP</div>';
-      html += '<div class="bc-room-detail" style="color:var(--red)">🚗 '+fmtVND(s.cost)+' chi phí điều xe</div>';
-      html += '</div></div>';
+  } else if (bcMainTab === 'vehicle') {
+    if (vehicleSel) {
+      const subList = list.filter(function(b){ return (b.vehicleGroup||'Xe khac') === vehicleSel; });
+      html += '<div class="bc-section">🚙 '+(VEHICLE_GROUP_LABELS[vehicleSel]||vehicleSel)+'</div>';
+      html += buildOverviewCardsHtml(subList);
     } else {
-      html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu cho Loại xe này trong kỳ.</div></div>';
+      const keys = Object.keys(vehicleStats).sort(function(a,b2){ return vehicleStats[b2].count - vehicleStats[a].count; });
+      html += '<div class="bc-section">Theo Loại xe</div>';
+      if (!keys.length) {
+        html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu Loại xe trong kỳ.</div></div>';
+      } else {
+        keys.forEach(function(k) {
+          const s = vehicleStats[k];
+          html += '<div class="bc-room-row">';
+          html += '<div><div class="bc-room-name">🚙 '+(VEHICLE_GROUP_LABELS[k]||k)+'</div><div class="bc-sub">'+s.count+' chuyến</div></div>';
+          html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
+          html += '<div class="bc-room-detail" style="color:var(--blue)">💰 '+fmtVND(s.vp)+' doanh thu VP</div>';
+          html += '<div class="bc-room-detail" style="color:var(--red)">🚗 '+fmtVND(s.cost)+' chi phí điều xe</div>';
+          html += '</div></div>';
+        });
+      }
     }
-  }
-
-  // Theo đối tác
-  if (partnerSel) {
-    html += '<div class="bc-section">Theo đối tác</div>';
-    const s = partnerStats[partnerSelKey];
-    if (s) {
-      const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
-      html += '<div class="bc-room-row">';
-      html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Điểm '+fmtVND(s.diem):'')+(s.deductions?' &nbsp;•&nbsp; Khấu trừ −'+fmtVND(s.deductions):'')+'</div></div>';
-      html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
-      html += '<div class="bc-room-detail" style="color:var(--gm)">Lãi gộp '+fmtVND(net)+'</div>';
-      if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';
-      html += '</div></div>';
+  } else if (bcMainTab === 'partner') {
+    if (partnerSel) {
+      const subList = list.filter(function(b){
+        if (b.custType !== 'doitac') return false;
+        const key = b.partnerId || b.partnerName || 'unknown';
+        return key === partnerSelKey;
+      });
+      const pName = (partnerStats[partnerSelKey] && partnerStats[partnerSelKey].name) || (partners.find(function(p){ return p.id===partnerSel; })||{}).name || partnerSel;
+      html += '<div class="bc-section">🤝 '+pName+'</div>';
+      html += buildOverviewCardsHtml(subList);
+      if (subList.length) {
+        const s = partnerStats[partnerSelKey];
+        const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
+        html += '<div class="bc-room-row">';
+        html += '<div><div class="bc-room-name">Lãi gộp đối tác</div><div class="bc-sub">CP điều xe '+fmtVND(s.cost)+(s.diem?' &nbsp;•&nbsp; Điểm '+fmtVND(s.diem):'')+(s.deductions?' &nbsp;•&nbsp; Khấu trừ −'+fmtVND(s.deductions):'')+'</div></div>';
+        html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(net)+'</div>';
+        if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';
+        html += '</div></div>';
+      }
     } else {
-      const p = partners.find(function(x){ return x.id === partnerSel; });
-      html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu cho đối tác'+(p?' "'+p.name+'"':'')+' trong kỳ.</div></div>';
+      const keys = Object.keys(partnerStats).sort(function(a,b2){ return partnerStats[b2].count - partnerStats[a].count; });
+      html += '<div class="bc-section">Theo đối tác</div>';
+      if (!keys.length) {
+        html += '<div class="bc-room-row"><div class="bc-sub">Không có dữ liệu đối tác trong kỳ.</div></div>';
+      } else {
+        keys.forEach(function(k) {
+          const s = partnerStats[k];
+          const net = s.vp - s.cost + (s.diem||0) - (s.deductions||0);
+          html += '<div class="bc-room-row">';
+          html += '<div><div class="bc-room-name">🤝 '+s.name+'</div><div class="bc-sub">'+s.count+' chuyến &nbsp;•&nbsp; CP điều xe '+fmtVND(s.cost)+'</div></div>';
+          html += '<div class="bc-room-stats"><div class="bc-room-money">'+fmtVND(s.vp)+'</div>';
+          html += '<div class="bc-room-detail" style="color:var(--gm)">Lãi gộp '+fmtVND(net)+'</div>';
+          if (s.unpaid) html += '<div class="bc-room-detail" style="color:var(--orange)">⏳ '+fmtVND(s.unpaid)+' chưa TT</div>';
+          html += '</div></div>';
+        });
+      }
     }
+  } else {
+    // 'time' — báo cáo tổng quan chung cho toàn bộ kỳ đã chọn
+    html += buildOverviewCardsHtml(list);
   }
 
   html += '<div class="pb"></div>';

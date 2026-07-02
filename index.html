@@ -878,7 +878,7 @@
 <script>
 // ===== AUTH & USER MANAGEMENT =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxj8zwaHKblAuqZvxIp9uook-ZTfBFLbGKB6PuATSU2_SwcaA3WkwvHzkHyj_h7iHqR/exec';
-const APP_VERSION = '16.8';
+const APP_VERSION = '16.9';
 const ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_PASS = 'Noibaicar123!@#';
 const ALL_FEATURES = ['dieu-xe','thong-tin-xe','booking','khachhang','baocao'];
@@ -1313,6 +1313,21 @@ async function testTelegram() {
 function scheduleAutoSync() {
   clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(function() { syncPush(true); }, 4000);
+}
+
+// ===== MERGE / TOMBSTONE HELPERS (chống ghi đè khi nhiều người dùng đồng bộ cùng lúc) =====
+// Gọi hàm này NGAY SAU khi sửa 1 trường của booking, trước khi lưu localStorage, để server
+// biết bản ghi nào mới hơn khi merge (server ghép theo id + updatedAt thay vì ghi đè cả mảng).
+function touchBooking(b) {
+  if (!b) return;
+  b.updatedAt = Date.now();
+}
+// Danh sách booking "còn sống" — loại bỏ các booking đã bị đánh dấu xoá (tombstone).
+// Dùng hàm này ở MỌI nơi hiển thị/tính toán/báo cáo thay vì đọc thẳng biến bookings,
+// để booking đã xoá không hiện lại dù vẫn còn nằm trong mảng (cần giữ lại để đồng bộ
+// việc xoá tới các máy khác, không xoá cứng khỏi mảng nữa).
+function activeBookings() {
+  return bookings.filter(function(b) { return !b.deleted; });
 }
 
 async function syncPush(silent) {
@@ -1835,6 +1850,7 @@ function saveToBookingDyn(obj, id, isTK, isCK, bienTen) {
     p.bookingIds.push(booking.id);
     localStorage.setItem('nbc_partners', JSON.stringify(partners));
   }
+  touchBooking(booking);
   bookings.unshift(booking);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
@@ -1907,6 +1923,7 @@ function saveToBooking() {
     p.bookingIds.push(booking.id);
     localStorage.setItem('nbc_partners', JSON.stringify(partners));
   }
+  touchBooking(booking);
   bookings.unshift(booking);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
@@ -2047,7 +2064,7 @@ function renderBookings() {
     }
     return true;
   }
-  let filtered = bookings.filter(b => {
+  let filtered = activeBookings().filter(b => {
     if (search && !b.phone.includes(search)) return false;
     if (!passesTimeFilter(b)) return false;
     if (currentMainTab === 'chuadieu') return b.statusDrive === 'processing';
@@ -2143,6 +2160,7 @@ function savePointsPopup(id) {
   if (!b) return;
   b.room = document.getElementById('pp-room').value;
   b.points = document.getElementById('pp-points').value;
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   document.getElementById('points-popup').remove();
@@ -2508,6 +2526,7 @@ function toggleVAT(id) {
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b) return;
   b.hasVAT = document.getElementById('vat-cb-'+id).checked;
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   openDetail(id);
@@ -2527,6 +2546,7 @@ function updateAlertHours(id) {
   const raw = (document.getElementById('alert-hours-'+id)||{}).value;
   const val = raw === '' || raw === null || raw === undefined ? null : parseFloat(raw);
   b.alertHoursOverride = (val !== null && !isNaN(val) && val >= 0) ? val : null;
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   showToast(b.alertHoursOverride !== null ? ('✓ Cảnh báo trước ' + b.alertHoursOverride + ' giờ') : '✓ Dùng cấu hình mặc định');
@@ -2545,6 +2565,7 @@ function updatePriceDriver(id) {
   if (!b) return;
   const raw = (document.getElementById('price-driver-'+id)||{}).value || '';
   b.priceDriver = raw.trim();
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   showToast(b.priceDriver ? ('✓ Đã lưu giá điều: ' + b.priceDriver) : '✓ Đã xoá giá điều');
@@ -2563,6 +2584,7 @@ function saveCarInfo(id, value) {
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b) return;
   b.carInfo = (value || '').trim();
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   showToast(b.carInfo ? '✓ Đã lưu thông tin xe' : '✓ Đã xoá thông tin xe');
@@ -2582,6 +2604,7 @@ function addExtra(id) {
   if (!amt || isNaN(amt)) { showToast('⚠️ Vui lòng nhập số tiền'); return; }
   if (!b.extras) b.extras = [];
   b.extras.push({ note: note.trim()||'Phí phát sinh', amount: amt });
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   openDetail(id);
@@ -2598,6 +2621,7 @@ function removeExtra(id, idx) {
   const b = bookings.find(function(x){ return x.id===id; });
   if (!b || !b.extras) return;
   b.extras.splice(idx, 1);
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   openDetail(id);
@@ -2620,6 +2644,7 @@ function updateStatus(id, field, value) {
   const b = bookings.find(function(x){ return x.id === id; });
   if (!b) return;
   b[field] = value;
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   openDetail(id);
@@ -2629,9 +2654,15 @@ function updateBookingField(id, field, value) {
   const b = bookings.find(function(x){ return x.id === id; });
   if (!b) return;
   b[field] = value;
+  touchBooking(b);
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
 }
 
+// XOÁ MỀM (tombstone): không xoá khỏi mảng `bookings` nữa, chỉ đánh dấu deleted:true.
+// Lý do: nếu xoá thẳng khỏi mảng, máy khác đang giữ bản cũ (chưa kịp nhận biết booking này
+// bị xoá) có thể vô tình "hồi sinh" lại nó khi đồng bộ lên — vì server sẽ không phân biệt được
+// "chưa từng có" với "đã từng có nhưng bị xoá". Đánh dấu deleted + updatedAt để server/các máy
+// khác biết chắc đây là một thay đổi (xoá) cần merge, không phải thiếu dữ liệu.
 function deleteBooking() {
   const cu = getCurrentUser();
   const isAdmin = !cu || cu.role === 'admin';
@@ -2641,7 +2672,8 @@ function deleteBooking() {
   }
   if (!currentDetailId) return;
   if (!confirm('Xoá booking này?')) return;
-  bookings = bookings.filter(function(x){ return x.id !== currentDetailId; });
+  const b = bookings.find(function(x){ return x.id === currentDetailId; });
+  if (b) { b.deleted = true; touchBooking(b); }
   localStorage.setItem('nbc_bookings', JSON.stringify(bookings));
   scheduleAutoSync();
   closeDetail();
@@ -2729,7 +2761,7 @@ function setKHSort(s) {
 // Build customer list from bookings
 function buildCustomers() {
   const map = {};
-  bookings.forEach(function(b) {
+  activeBookings().forEach(function(b) {
     const key = b.phone || b.name || 'unknown';
     if (!map[key]) {
       map[key] = { id:'cus-'+key, name:b.name||'Không tên', phone:b.phone||'', bookings:[], tags:[], note:'' };
@@ -2882,7 +2914,7 @@ function openKHDetail(type, idOrData) {
     const p = partners.find(function(x){ return x.id===idOrData; });
     if (!p) return;
     document.getElementById('kh-detail-title').textContent = p.name;
-    const pBookings = bookings.filter(function(b){ return (p.bookingIds||[]).includes(b.id); });
+    const pBookings = activeBookings().filter(function(b){ return (p.bookingIds||[]).includes(b.id); });
     const totalVP = pBookings.reduce(function(s,b){ return s+parseMoneyNum(b.priceVP); },0);
 
     const bkHtml = pBookings.slice().reverse().map(function(b){
@@ -3319,7 +3351,7 @@ function filterBookingsForBC() {
   const todayStr = String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
   const monthStr = String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
 
-  return bookings.filter(function(b) {
+  return activeBookings().filter(function(b) {
     if (bcFilter === 'day') return fmtDate(b.date) === todayStr;
     if (bcFilter === 'month') return fmtDate(b.date).endsWith(monthStr);
     if (bcFilter === 'custom') {
@@ -3681,9 +3713,10 @@ function parseMoneyToNum(val) {
 }
 
 function exportExcel() {
-  if (!bookings.length){ showToast('⚠️ Chưa có booking nào'); return; }
+  const exportList = activeBookings();
+  if (!exportList.length){ showToast('⚠️ Chưa có booking nào'); return; }
   const headers = ['Mã booking','Tên khách','SĐT','Ngày đón','Lộ trình','Loại xe','Giá điều (VND)','Giá VP (VND)','Room','Điểm','Tiền điểm (VND)','TT điều xe','TT thanh toán','TT điểm','Ghi chú'];
-  const rows = bookings.map(function(b) {
+  const rows = exportList.map(function(b) {
     const selRoom = rooms.find(function(r){ return r.name === b.room; });
     const pointsAmt = selRoom && b.points ? parseFloat(b.points) * selRoom.rate : '';
     return [
